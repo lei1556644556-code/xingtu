@@ -1,0 +1,3296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>天文星图 - 可玩原型</title>
+  <style>
+    :root {
+      --bg-1: #020617;
+      --bg-2: #0f172a;
+      --panel: rgba(255,255,255,0.06);
+      --panel-2: rgba(15,23,42,0.78);
+      --line: rgba(255,255,255,0.1);
+      --text: #e5eefb;
+      --muted: #94a3b8;
+      --cyan: #22d3ee;
+      --cyan-2: #38bdf8;
+      --danger: #fb7185;
+      --warning: #fbbf24;
+      --good: #10b981;
+      --shadow: 0 18px 50px rgba(0,0,0,0.28);
+      --radius: 24px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif; color: var(--text); background:
+      radial-gradient(circle at top, rgba(29,78,216,0.28), transparent 35%),
+      linear-gradient(180deg, var(--bg-1), #0b1220 45%, #111827);
+      min-height: 100%; }
+    body { min-height: 100vh; }
+    button { font: inherit; cursor: pointer; }
+    .hidden { display: none !important; }
+    .app { width: min(100%, 430px); margin: 0 auto; padding: 10px 10px calc(20px + env(safe-area-inset-bottom)); min-height: 100vh; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 24px; box-shadow: var(--shadow); backdrop-filter: blur(12px); }
+    .card-inner { background: rgba(2,6,23,0.35); }
+    .pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 999px; border: 1px solid rgba(34,211,238,0.28); background: rgba(34,211,238,0.1); color: #a5f3fc; font-size: 13px; }
+    .home-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    .home-main { padding: 18px; }
+    .home-side { padding: 16px; }
+    h1, h2, h3, p { margin: 0; }
+    .title { margin-top: 14px; font-size: 30px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; }
+    .lead { margin-top: 12px; max-width: 100%; line-height: 1.7; color: #cbd5e1; font-size: 14px; }
+    .feature-grid { margin-top: 18px; display: grid; grid-template-columns: 1fr; gap: 10px; }
+    .feature { border-radius: 20px; border: 1px solid var(--line); background: rgba(15,23,42,0.7); padding: 16px; }
+    .feature .k { font-size: 14px; color: #a5f3fc; }
+    .feature .v { margin-top: 8px; font-size: 14px; color: #cbd5e1; line-height: 1.7; }
+    .btn-row { margin-top: 18px; display: grid; grid-template-columns: 1fr; gap: 10px; }
+    .btn-primary, .btn-secondary, .btn-small { border: 0; border-radius: 16px; transition: .18s ease; min-height: 46px; }
+    .btn-primary:hover, .btn-secondary:hover, .btn-small:hover { transform: translateY(-1px); }
+    .btn-primary { background: linear-gradient(135deg, var(--cyan), var(--cyan-2)); color: #03121c; padding: 14px 18px; font-weight: 800; }
+    .btn-secondary { background: rgba(255,255,255,0.06); color: var(--text); padding: 14px 18px; border: 1px solid rgba(255,255,255,0.12); }
+    .btn-small { background: rgba(255,255,255,0.06); color: var(--text); padding: 12px 14px; border: 1px solid rgba(255,255,255,0.12); font-size: 14px; }
+    .record-grid { margin-top: 16px; display: grid; gap: 12px; }
+    .record-card { border-radius: 18px; border: 1px solid var(--line); background: rgba(15,23,42,0.75); padding: 14px; }
+    .record-card .label { color: var(--muted); font-size: 14px; }
+    .record-card .value { margin-top: 6px; font-size: 30px; font-weight: 800; }
+    .tip-box { margin-top: 16px; padding: 14px; border-radius: 18px; border: 1px solid rgba(251,191,36,0.18); background: rgba(251,191,36,0.1); color: #fde68a; line-height: 1.8; font-size: 14px; }
+
+    .topbar { position: relative; top: auto; z-index: 1; display: grid; grid-template-columns: 1fr; gap: 10px; align-items: start; padding-bottom: 8px; background: transparent; backdrop-filter: none; }
+    .stat-grid { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; scroll-snap-type: x proximity; }
+    .stat { padding: 12px 14px; border-radius: 18px; border: 1px solid var(--line); background: var(--panel); min-width: 104px; flex: 0 0 auto; scroll-snap-align: start; }
+    .stat .label { font-size: 12px; letter-spacing: .18em; color: var(--muted); text-transform: uppercase; }
+    .stat .value { margin-top: 6px; font-size: 22px; font-weight: 800; }
+    .game-grid { margin-top: 12px; display: grid; grid-template-columns: 1fr; gap: 12px; align-items: start; padding-bottom: 12px; }
+    .board-wrap { padding: 12px; position: relative; }
+    .board-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-direction: column; }
+    .board-title { font-size: 18px; font-weight: 700; }
+    .board-sub { margin-top: 6px; color: var(--muted); font-size: 14px; }
+    .progress-label { text-align: left; color: #cbd5e1; font-size: 13px; width: 100%; }
+    .progress { margin-top: 8px; width: 100%; height: 10px; background: rgba(255,255,255,0.08); border-radius: 999px; overflow: hidden; }
+    .progress > span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, var(--cyan), var(--cyan-2)); border-radius: inherit; }
+    canvas { display: block; width: 100%; height: auto; border-radius: 22px; border: 1px solid rgba(34,211,238,0.1); background: linear-gradient(180deg, #06111f, #0b1b31); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02); touch-action: none; }
+    .side { display: grid; gap: 12px; }
+    .side-card { padding: 14px; }
+    .side-title { font-size: 18px; font-weight: 700; }
+    .list { margin-top: 10px; display: grid; gap: 8px; }
+    .item-btn, .log-item, .mini-card { border-radius: 18px; border: 1px solid var(--line); background: rgba(15,23,42,0.75); }
+    .item-btn { width: 100%; text-align: left; color: var(--text); padding: 14px; min-height: 76px; }
+    .item-btn.active { border-color: rgba(34,211,238,0.7); background: rgba(34,211,238,0.12); }
+    .item-btn .title { margin: 0; font-size: 16px; font-weight: 700; }
+    .item-btn .hint { margin-top: 6px; font-size: 13px; color: var(--muted); line-height: 1.6; }
+    .mini-card { padding: 14px; }
+    .mini-title { font-weight: 700; }
+    .mini-hint { margin-top: 6px; color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .log-item { padding: 10px 12px; font-size: 14px; color: #dbeafe; }
+    .baffle-row { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; flex-direction: column; }
+    .baffle-info { color: var(--muted); font-size: 13px; line-height: 1.6; margin-top: 6px; }
+    .goal-grid { margin-top: 10px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+    .goal-stat { padding: 12px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); background: rgba(2,6,23,0.42); }
+    .goal-stat .k { font-size: 12px; color: var(--muted); }
+    .goal-stat .v { margin-top: 6px; font-size: 18px; font-weight: 800; line-height: 1.2; }
+    .goal-stat .sub { margin-top: 4px; font-size: 12px; color: #cbd5e1; line-height: 1.45; }
+    .goal-focus { margin-top: 10px; padding: 12px; border-radius: 16px; border: 1px solid rgba(34,211,238,0.18); background: rgba(34,211,238,0.08); }
+    .goal-focus-title { font-size: 13px; color: #a5f3fc; font-weight: 700; }
+    .goal-focus-main { margin-top: 6px; font-size: 15px; font-weight: 700; line-height: 1.5; }
+    .goal-focus-sub { margin-top: 4px; font-size: 12px; color: #cbd5e1; line-height: 1.55; }
+    .goal-footnote { margin-top: 8px; font-size: 12px; color: var(--muted); line-height: 1.5; }
+    .arena-ui { margin-top: 10px; padding: 12px; border-radius: 18px; border: 1px solid rgba(245,158,11,0.18); background: linear-gradient(180deg, rgba(245,158,11,0.08), rgba(15,23,42,0.72)); display: grid; gap: 10px; }
+    .arena-main { display: grid; grid-template-columns: 110px 1fr; gap: 10px; align-items: stretch; }
+    .arena-count-card { border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); background: rgba(2,6,23,0.36); padding: 12px; display: flex; flex-direction: column; justify-content: center; }
+    .arena-count-card .label { font-size: 11px; letter-spacing: .12em; color: #fcd34d; text-transform: uppercase; }
+    .arena-count-row { display: flex; align-items: baseline; gap: 4px; margin-top: 6px; }
+    .arena-count-card .num { font-size: 30px; line-height: 1; font-weight: 800; color: #fff; }
+    .arena-count-card .unit { font-size: 13px; color: #fde68a; font-weight: 700; }
+    .arena-count-card .sub { margin-top: 6px; font-size: 12px; color: #cbd5e1; }
+    .arena-rank-stack { display: grid; gap: 8px; }
+    .arena-chip { min-height: 36px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); background: rgba(2,6,23,0.36); color: #e5e7eb; font-size: 13px; font-weight: 700; }
+    .arena-chip strong { color: #fff; font-size: 15px; }
+    .arena-chip.strong { border-color: rgba(34,211,238,0.28); color: #a5f3fc; }
+    .arena-chip.accent { border-color: rgba(245,158,11,0.28); color: #fde68a; }
+    .arena-meter { border-radius: 16px; border: 1px solid rgba(255,255,255,0.08); background: rgba(2,6,23,0.28); padding: 10px 12px; }
+    .arena-meter-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .arena-meter-head .meter-label { font-size: 12px; color: var(--muted); }
+    .arena-meter-head .meter-state { font-size: 12px; font-weight: 700; color: #fcd34d; }
+    .arena-progress { margin-top: 8px; height: 10px; border-radius: 999px; background: rgba(255,255,255,0.08); overflow: hidden; }
+    .arena-progress > span { display: block; width: 12%; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #f59e0b, #22d3ee); }
+    .arena-mini-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    .arena-mini { padding: 10px 8px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); background: rgba(2,6,23,0.28); text-align: center; }
+    .arena-mini .mk { display: block; font-size: 11px; color: var(--muted); }
+    .arena-mini strong { display: block; margin-top: 4px; font-size: 16px; color: #fff; }
+    .result-eval-grid { margin-top: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .result-eval-card { padding: 14px; border-radius: 16px; border: 1px solid var(--line); background: rgba(255,255,255,0.04); }
+    .result-eval-card .k { font-size: 12px; color: var(--muted); }
+    .result-eval-card .v { margin-top: 6px; font-size: 20px; font-weight: 800; }
+    .result-eval-card .sub { margin-top: 4px; font-size: 12px; color: #cbd5e1; line-height: 1.5; }
+
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(2,6,23,0.74); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; padding: 24px; z-index: 20; }
+    .modal { width: 100%; max-width: 460px; padding: 24px; }
+    .modal-tag { font-size: 12px; letter-spacing: .22em; color: #fda4af; text-transform: uppercase; }
+    .modal-title { margin-top: 10px; font-size: 36px; font-weight: 800; }
+    .modal-grid { margin-top: 18px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .modal-cell { padding: 14px; border-radius: 18px; border: 1px solid var(--line); background: rgba(255,255,255,0.05); text-align: center; }
+    .modal-cell .k { font-size: 12px; color: var(--muted); }
+    .modal-cell .v { margin-top: 6px; font-size: 22px; font-weight: 800; }
+    .modal-tip { margin-top: 18px; padding: 14px; border-radius: 18px; border: 1px solid rgba(34,211,238,0.18); background: rgba(34,211,238,0.08); color: #cffafe; line-height: 1.7; font-size: 14px; }
+    .modal-actions { margin-top: 20px; display: flex; gap: 12px; }
+    .modal-actions button { flex: 1; }
+    .modal-subtitle { margin-top: 10px; color: #cbd5e1; line-height: 1.75; font-size: 14px; }
+    .modal-quick-grid { margin-top: 18px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .modal-quick-grid button { min-height: 52px; font-weight: 700; }
+
+
+    .network-row { margin-top: 16px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    .status-chip { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; border: 1px solid var(--line); background: rgba(15,23,42,0.75); color: #cbd5e1; font-size: 13px; }
+    .status-chip strong { color: #fff; }
+    .leaderboard-wrap { margin-top: 18px; display: grid; gap: 12px; }
+    .leaderboard-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .leaderboard-head h3 { font-size: 18px; }
+    .leaderboard-status { margin-top: 10px; font-size: 13px; color: var(--muted); line-height: 1.7; }
+    .leaderboard-preview-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+    .leaderboard-preview-card { border-radius: 18px; border: 1px solid var(--line); background: rgba(15,23,42,0.72); padding: 14px; }
+    .leaderboard-preview-k { font-size: 13px; color: #a5f3fc; }
+    .leaderboard-preview-v { margin-top: 8px; font-size: 24px; font-weight: 800; color: #fff; }
+    .leaderboard-preview-sub { margin-top: 6px; font-size: 12px; color: var(--muted); line-height: 1.6; }
+    .leaderboard-open-box { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px; border-radius: 18px; border: 1px solid var(--line); background: rgba(15,23,42,0.72); flex-wrap: wrap; }
+    .leaderboard-open-hint { color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .leaderboard-empty { color: var(--muted); font-size: 13px; line-height: 1.7; padding: 8px 2px; }
+    .field { width: 100%; padding: 13px 14px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.14); background: rgba(2,6,23,0.5); color: #fff; outline: none; font: inherit; }
+    .field:focus { border-color: rgba(34,211,238,0.7); box-shadow: 0 0 0 3px rgba(34,211,238,0.12); }
+    .form-help { margin-top: 10px; color: var(--muted); font-size: 13px; line-height: 1.7; }
+
+
+    .modal-wide { width: min(92vw, 420px); max-width: 420px; max-height: min(84vh, 760px); position: relative; display: flex; flex-direction: column; overflow: hidden; }
+    .modal-actions.tight { margin-top: 16px; justify-content: space-between; }
+    .modal-icon-close { position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06); color: #fff; font-size: 24px; line-height: 1; }
+    .boards-modal-top { display: flex; justify-content: space-between; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 14px; padding-right: 52px; }
+    .leaderboard-scroll { margin-top: 14px; min-height: 0; overflow-y: auto; padding-right: 6px; }
+    .boards-modal-summary { display: grid; grid-template-columns: 1fr; gap: 10px; margin-top: 14px; }
+    .summary-card { padding: 14px; border-radius: 18px; border: 1px solid var(--line); background: rgba(255,255,255,0.05); }
+    .summary-card .k { font-size: 12px; color: var(--muted); }
+    .summary-card .v { margin-top: 6px; font-size: 20px; font-weight: 800; }
+    .leaderboard-tabs { margin-top: 18px; display: flex; gap: 10px; flex-wrap: wrap; }
+    .leaderboard-tab { border-radius: 999px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); color: #cbd5e1; padding: 10px 16px; }
+    .leaderboard-tab.active { background: rgba(34,211,238,0.14); color: #a5f3fc; border-color: rgba(34,211,238,0.42); }
+    .board-rich-group { margin-top: 16px; border-radius: 22px; border: 1px solid var(--line); background: rgba(15,23,42,0.72); padding: 16px; display: flex; flex-direction: column; min-height: 0; }
+    .board-rich-head { display: flex; justify-content: space-between; gap: 12px; align-items: end; flex-wrap: wrap; margin-bottom: 12px; }
+    .board-rich-head h3 { font-size: 18px; margin: 0; }
+    .board-rich-sub { font-size: 13px; color: var(--muted); margin-top: 4px; line-height: 1.6; }
+    .board-rich-table { display: grid; gap: 8px; max-height: min(44vh, 380px); overflow: auto; padding-right: 4px; align-content: start; }
+    .board-rich-row { display: grid; align-items: center; gap: 10px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06); background: rgba(2,6,23,0.45); padding: 10px 12px; }
+    .board-rich-row.header { background: rgba(34,211,238,0.08); border-color: rgba(34,211,238,0.12); color: #a5f3fc; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; }
+    .board-rich-row.single { grid-template-columns: 44px minmax(130px,1.7fr) 72px 72px minmax(96px,1fr); min-width: 520px; }
+    .board-rich-row.stage { grid-template-columns: 44px minmax(130px,1.7fr) 72px 88px 62px; min-width: 500px; }
+    .board-rich-row.efficiency { grid-template-columns: 44px minmax(120px,1.45fr) 72px 78px 78px 62px; min-width: 560px; }
+    .rank-cell { color: #fcd34d; font-weight: 800; text-align: center; }
+    .player-cell { min-width: 0; }
+    .player-cell .name { font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .player-cell .sub { margin-top: 3px; color: var(--muted); font-size: 12px; line-height: 1.5; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .value-cell { font-weight: 800; color: #e0f2fe; text-align: center; white-space: nowrap; }
+    .muted-cell { color: #cbd5e1; font-size: 13px; text-align: center; white-space: nowrap; }
+    .board-rich-pager { margin-top: 14px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; position: sticky; bottom: 0; background: linear-gradient(180deg, rgba(15,23,42,0) 0%, rgba(15,23,42,0.92) 18%, rgba(15,23,42,0.96) 100%); padding-top: 10px; }
+    .board-rich-pageinfo { color: #cbd5e1; font-size: 13px; }
+
+    .action-row { position: static; left: auto; transform: none; bottom: auto; width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 0; background: transparent; border: 0; border-radius: 0; z-index: auto; backdrop-filter: none; box-shadow: none; }
+    .action-row .btn-small { width: 100%; border-radius: 14px; font-weight: 700; padding: 12px 8px; }
+    .action-row .btn-small:hover { transform: none; }
+    .action-row::before { content: '快捷操作'; position: absolute; top: -20px; left: 12px; font-size: 11px; color: #94a3b8; letter-spacing: .08em; }
+    @media (max-width: 1120px) {
+      .home-grid, .game-grid, .topbar { grid-template-columns: 1fr; }
+      .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .feature-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 760px) {
+      .app { padding: 14px; }
+      .modal-wide { width: min(96vw, 96vw); max-height: 88vh; padding: 18px; }
+      .leaderboard-scroll { padding-right: 0; }
+      .board-rich-table { max-height: 42vh; }
+      .home-main, .home-side, .board-wrap, .side-card { padding: 14px; }
+      .title { font-size: 32px; }
+      .stat-grid { grid-template-columns: 1fr 1fr; }
+      .modal-grid { grid-template-columns: 1fr; }
+      .leaderboard-preview-grid, .boards-modal-summary { grid-template-columns: 1fr; }
+      .board-rich-row.single, .board-rich-row.stage, .board-rich-row.efficiency { grid-template-columns: 1fr; }
+      .board-head { flex-direction: column; }
+      .boards-modal-top { padding-right: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section id="homeScreen">
+      <div class="home-grid">
+        <div class="card home-main">
+          <div class="pill">原型 Web · 天文星图</div>
+          <h1 class="title">天文星图 可玩原型</h1>
+          <p class="lead">这版优先还原核心手感：7×12 地图、拖拽瞄准发射、砖块/场地元素、回合下移、道具、挡板与结算。外围的成就、排行、活动时段先做成展示态，方便快速判断玩法体验和节奏。</p>
+          <div class="feature-grid">
+            <div class="feature"><div class="k">核心循环</div><div class="v">拖拽发射 → 结算 → 地图下移 → 新一轮</div></div>
+            <div class="feature"><div class="k">重点元素</div><div class="v">+球 / 变大 / 1变2 / 1变3 / 黑洞 / 闪电</div></div>
+            <div class="feature"><div class="k">原型取舍</div><div class="v">优先做可玩体验，不做服务端逻辑，不接正式配表</div></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn-primary" id="startBtn">输入名称并开始</button>
+            <button class="btn-secondary" id="resetProfileBtn">清空本地记录</button>
+            <button class="btn-secondary" id="changePlayerBtn">切换玩家</button>
+          </div>
+          <div class="network-row">
+            <div class="status-chip" id="playerChip">当前玩家：<strong>未设置</strong></div>
+            <div class="status-chip" id="syncChip">联网状态：<strong>未配置</strong></div>
+          </div>
+        </div>
+        <div class="card home-side">
+          <h2>本地体验记录</h2>
+          <div class="record-grid">
+            <div class="record-card"><div class="label">累计积分</div><div class="value" id="profileCumulative">0</div></div>
+            <div class="record-card"><div class="label">单局最高</div><div class="value" id="profileBest">0</div></div>
+            <div class="record-card"><div class="label">体验局数</div><div class="value" id="profileRuns">0</div></div>
+          </div>
+          <div class="tip-box">建议先打 2~3 局，重点感受：<br>1. 发射节奏是否顺手<br>2. 元素是否“爽而不乱”<br>3. 地图下移压力是否来得太快<br>4. 挡板/道具有没有形成明显决策</div>
+          <div class="leaderboard-wrap">
+            <div class="leaderboard-head">
+              <h3>在线排行榜</h3>
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button class="btn-small" id="refreshBoardsBtn">刷新</button>
+                <button class="btn-secondary" id="homeBoardsBtn">打开弹窗</button>
+              </div>
+            </div>
+            <div class="leaderboard-status" id="leaderboardStatus">未配置 Supabase 时，这里只显示占位提示。</div>
+            <div class="leaderboard-preview-grid">
+              <div class="leaderboard-preview-card">
+                <div class="leaderboard-preview-k">单局总分榜</div>
+                <div class="leaderboard-preview-v" id="singleBoardPreviewValue">--</div>
+                <div class="leaderboard-preview-sub" id="singleBoardPreviewSub">点击弹窗查看完整榜单</div>
+              </div>
+              <div class="leaderboard-preview-card">
+                <div class="leaderboard-preview-k">最高关卡榜</div>
+                <div class="leaderboard-preview-v" id="stageBoardPreviewValue">--</div>
+                <div class="leaderboard-preview-sub" id="stageBoardPreviewSub">点击弹窗查看完整榜单</div>
+              </div>
+              <div class="leaderboard-preview-card">
+                <div class="leaderboard-preview-k">平均分榜</div>
+                <div class="leaderboard-preview-v" id="efficiencyBoardPreviewValue">--</div>
+                <div class="leaderboard-preview-sub" id="efficiencyBoardPreviewSub">点击弹窗查看完整榜单</div>
+              </div>
+            </div>
+            <div class="leaderboard-open-box">
+              <button class="btn-primary" id="openBoardsBtn">查看完整排行榜</button>
+              <div class="leaderboard-open-hint">弹窗支持分页切换，点击空白区域或右上角即可关闭；快捷按钮改为随页面滚动查看。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="gameScreen" class="hidden">
+      <div class="topbar">
+        <div class="stat-grid">
+          <div class="stat"><div class="label">本局得分</div><div class="value" id="statScore">0</div></div>
+          <div class="stat"><div class="label">体力</div><div class="value" id="statEnergy">15/15</div></div>
+          <div class="stat"><div class="label">库存球</div><div class="value" id="statBall">8 × 1</div></div>
+          <div class="stat"><div class="label">星图等级</div><div class="value" id="statLevel">Lv.1</div></div>
+          <div class="stat"><div class="label">总球伤</div><div class="value" id="statPower">8</div></div>
+        </div>
+        <div class="action-row" aria-label="快捷操作">
+          <button class="btn-small" id="gameBoardsBtn">排行榜</button>
+          <button class="btn-small" id="restartBtn">重开本局</button>
+          <button class="btn-small" id="backHomeBtn">返回主页</button>
+        </div>
+      </div>
+
+      <div class="game-grid">
+        <div class="card board-wrap">
+          <div class="board-head">
+            <div>
+              <div class="board-title">天文星图 · 手机试玩版</div>
+              <div class="board-sub" id="boardHint">可发射</div>
+            </div>
+            <div class="progress-label">
+              <div id="progressText">升级进度 0/0</div>
+              <div class="progress"><span id="progressBar"></span></div>
+            </div>
+          </div>
+          <canvas id="board" width="350" height="658"></canvas>
+        </div>
+
+        <div class="side">
+          <div class="card side-card">
+            <div class="side-title">目标追逐</div>
+            <div class="goal-grid">
+              <div class="goal-stat">
+                <div class="k">我的最高分</div>
+                <div class="v" id="goalBestScore">0</div>
+                <div class="sub" id="goalBestScoreSub">继续刷新个人纪录</div>
+              </div>
+              <div class="goal-stat">
+                <div class="k">当前总分排名</div>
+                <div class="v" id="goalSingleRank">--</div>
+                <div class="sub" id="goalSingleRankSub">联网后会显示冲榜位置</div>
+              </div>
+              <div class="goal-stat">
+                <div class="k">当前最高关卡排名</div>
+                <div class="v" id="goalStageRank">--</div>
+                <div class="sub" id="goalStageRankSub">继续推进能抬高排名</div>
+              </div>
+              <div class="goal-stat">
+                <div class="k">本局体力性价比</div>
+                <div class="v" id="goalEfficiency">0.00</div>
+                <div class="sub" id="goalEfficiencySub">分数 ÷ 已消耗体力</div>
+              </div>
+            </div>
+            <div class="arena-ui">
+              <div class="arena-main">
+                <div class="arena-count-card">
+                  <div class="label">同台竞技</div>
+                  <div class="arena-count-row"><span class="num" id="goalArenaCount">--</span><span class="unit">人</span></div>
+                  <div class="sub" id="goalArenaPulse">竞技场集结中</div>
+                </div>
+                <div class="arena-rank-stack">
+                  <div class="arena-chip strong" id="goalArenaRankChip">总分榜 <strong>#--</strong></div>
+                  <div class="arena-chip" id="goalArenaBeatChip">领先 <strong>--%</strong></div>
+                  <div class="arena-chip accent" id="goalArenaGapChip">追分 <strong>--</strong></div>
+                </div>
+              </div>
+              <div class="arena-meter">
+                <div class="arena-meter-head"><span class="meter-label">冲榜热度</span><span class="meter-state" id="goalArenaMomentum">待发力</span></div>
+                <div class="arena-progress"><span id="goalArenaProgress"></span></div>
+              </div>
+              <div class="arena-mini-grid">
+                <div class="arena-mini"><span class="mk">超越</span><strong id="goalArenaBeatMini">--%</strong></div>
+                <div class="arena-mini"><span class="mk">差距</span><strong id="goalArenaChaseMini">--</strong></div>
+                <div class="arena-mini"><span class="mk">段位</span><strong id="goalArenaTier">新秀</strong></div>
+              </div>
+            </div>
+            <div class="goal-focus">
+              <div class="goal-focus-title">下一目标</div>
+              <div class="goal-focus-main" id="goalChaseMain">先把本局打进排行榜，再开始追人。</div>
+              <div class="goal-focus-sub" id="goalChaseSub">刷新后会根据当前榜单实时计算你距离上一名还差多少。</div>
+            </div>
+            <div class="goal-footnote" id="goalFootnote">当前会优先帮你追单局总分榜，其次关注最高关卡榜和平均分榜。</div>
+          </div>
+
+          <div class="card side-card">
+            <div class="side-title">操作面板</div>
+            <div class="list">
+              <button class="item-btn" id="itemSplit3"><div class="title" id="itemSplit3Title">1变3 道具 × 2</div><div class="hint">点击后再点空格，放置临时 1变3 元素</div></button>
+              <button class="item-btn" id="itemBlast"><div class="title" id="itemBlastTitle">伤害道具 × 2</div><div class="hint" id="itemBlastHint">点击后再点砖块，造成 4 点伤害</div></button>
+              <button class="item-btn" id="itemClear"><div class="title" id="itemClearTitle">清屏道具 × 1</div><div class="hint">直接清除最近终点的 3 行砖块</div></button>
+            </div>
+            <div class="mini-card" style="margin-top:14px;">
+              <div class="baffle-row">
+                <div>
+                  <div class="mini-title">挡板系统</div>
+                  <div class="baffle-info" id="baffleInfo">总球伤达到 15 可激活</div>
+                </div>
+                <button class="btn-primary" style="padding:10px 14px;border-radius:14px;" id="baffleBtn">激活</button>
+              </div>
+            </div>
+            <div class="mini-card" style="margin-top:14px;">
+              <div class="mini-title">体力补给</div>
+              <div class="mini-hint" id="energyInfo">支持手动补体；演示版可超过体力上限。</div>
+              <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+                <button class="btn-small" id="energyAdd5Btn">+5体力</button>
+                <button class="btn-small" id="energyAdd10Btn">+10体力</button>
+                <button class="btn-small" id="energyFillBtn">回满</button>
+              </div>
+            </div>
+            <div class="mini-card" style="margin-top:14px;">
+              <div class="mini-title">模板池补充</div>
+              <div class="mini-hint" id="templateInfo">开局底部固定预留 6 行安全区；累计消耗体力低于30时只出简单模板，之后困难概率逐步升高；每次结算先判断当前砖块最深层数是否 ≤ X：X 从 3 随累计消耗体力缓慢过渡到 6；若触发则一次性判定补到 Y 层并逐层播放动画，Y 从 6 缓慢过渡到 9；若未触发则只固定补 1 层。</div>
+            </div>
+          </div>
+
+          <div class="card side-card">
+            <div class="side-title">元素说明</div>
+            <div class="list" id="metaList"></div>
+          </div>
+
+          <div class="card side-card">
+            <div class="side-title">战斗日志</div>
+            <div class="list" id="logList"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="gameOverModal">
+    <div class="card modal">
+      <div class="modal-tag">结算</div>
+      <div class="modal-title">本次游戏结束</div>
+      <div class="modal-grid">
+        <div class="modal-cell"><div class="k">本局得分</div><div class="v" id="finalScore">0</div></div>
+        <div class="modal-cell"><div class="k">星图等级</div><div class="v" id="finalLevel">Lv.1</div></div>
+        <div class="modal-cell"><div class="k">回合数</div><div class="v" id="finalRounds">1</div></div>
+      </div>
+      <div class="result-eval-grid">
+        <div class="result-eval-card">
+          <div class="k">本局评价</div>
+          <div class="v" id="finalRating">稳步推进</div>
+          <div class="sub" id="finalRatingSub">继续往上打，把分数和关卡都送进更高排名。</div>
+        </div>
+        <div class="result-eval-card">
+          <div class="k">战胜玩家占比</div>
+          <div class="v" id="finalBeatPercent">--</div>
+          <div class="sub" id="finalBeatPercentSub">联网后会按当前排行榜估算。</div>
+        </div>
+        <div class="result-eval-card">
+          <div class="k">单局总分榜</div>
+          <div class="v" id="finalSingleRank">--</div>
+          <div class="sub" id="finalSingleRankSub">离上一名还差 -- 分</div>
+        </div>
+        <div class="result-eval-card">
+          <div class="k">最高关卡榜</div>
+          <div class="v" id="finalStageRank">--</div>
+          <div class="sub" id="finalStageRankSub">离上一名还差 -- 关</div>
+        </div>
+      </div>
+      <div class="modal-tip" id="finalGoalTip">这局的目标已经结算：继续追分、追关卡，或者去冲更高的体力性价比。</div>
+      <div class="modal-tip" id="finalArenaTip" style="margin-top:10px; border-color: rgba(245,158,11,0.22); color:#fde68a; background: rgba(245,158,11,0.10);">当前竞技场正在集结更多玩家，下一局继续把名次往上顶。</div>
+      <div class="modal-actions">
+        <button class="btn-primary" id="playAgainBtn">再来一局</button>
+        <button class="btn-secondary" id="modalHomeBtn">返回主页</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-backdrop" id="energyModal">
+    <div class="card modal">
+      <div class="modal-tag" style="color:#fcd34d;">体力不足</div>
+      <div class="modal-title">当前没有可用体力</div>
+      <div class="modal-subtitle">发射需要消耗 1 点体力。你可以直接在这里快速补体，不用回右侧面板找按钮。</div>
+      <div class="modal-quick-grid">
+        <button class="btn-primary" id="energyModalAdd5Btn">+5 体力</button>
+        <button class="btn-primary" id="energyModalAdd10Btn">+10 体力</button>
+        <button class="btn-secondary" id="energyModalFillBtn">回满体力</button>
+      </div>
+      <div class="modal-tip">演示版允许超过体力上限补体，方便你连续验证后期节奏。</div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="energyModalCloseBtn">稍后再说</button>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="modal-backdrop" id="leaderboardModal">
+    <div class="card modal modal-wide">
+      <button class="modal-icon-close" id="leaderboardModalCloseXBtn" aria-label="关闭排行榜">×</button>
+      <div class="modal-tag" style="color:#67e8f9;">在线排行榜</div>
+      <div class="modal-title">排行榜</div>
+      <div class="modal-subtitle">玩法界面和首页都能快速打开。弹窗保持居中，内容区域支持上下滑动，点击空白区域、右上角或底部按钮都能关闭。</div>
+      <div class="leaderboard-scroll">
+        <div class="boards-modal-top">
+          <div class="status-chip" id="leaderboardModalStatus">联网状态：<strong>未配置</strong></div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn-small" id="leaderboardModalRefreshBtn">刷新排行榜</button>
+            <button class="btn-secondary" id="leaderboardModalCloseTopBtn">关闭</button>
+          </div>
+        </div>
+        <div class="boards-modal-summary">
+          <div class="summary-card"><div class="k">当前玩家</div><div class="v" id="leaderboardPlayerName">未设置</div></div>
+          <div class="summary-card"><div class="k">当前局得分 / 关卡</div><div class="v" id="leaderboardRunSummary">0 / 1</div></div>
+          <div class="summary-card"><div class="k">平均分榜门槛 / 在线竞技</div><div class="v" id="leaderboardEfficiencyGate">总体力 ≥ 10</div></div>
+        </div>
+        <div class="leaderboard-status" id="leaderboardModalMessage">未配置 Supabase 时，这里只显示占位提示。</div>
+        <div class="leaderboard-tabs" id="leaderboardTabs">
+          <button class="leaderboard-tab active" data-board-tab="single">单局总分榜</button>
+          <button class="leaderboard-tab" data-board-tab="stage">最高关卡榜</button>
+          <button class="leaderboard-tab" data-board-tab="efficiency">平均分榜</button>
+        </div>
+        <div class="board-rich-group">
+          <div class="board-rich-head">
+            <div>
+              <h3 id="leaderboardModalBoardTitle">单局总分榜</h3>
+              <div class="board-rich-sub" id="leaderboardModalBoardSub">按单局总分排序，同分按更早提交靠前。</div>
+            </div>
+            <div class="board-rich-sub" id="leaderboardModalBoardMeta">第 1 / 1 页 · 共 0 条</div>
+          </div>
+          <div class="board-rich-table" id="leaderboardModalTable"></div>
+          <div class="board-rich-pager">
+            <button class="btn-small" id="leaderboardPrevPageBtn">上一页</button>
+            <div class="board-rich-pageinfo" id="leaderboardPageInfo">第 1 / 1 页</div>
+            <button class="btn-small" id="leaderboardNextPageBtn">下一页</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions tight">
+        <button class="btn-primary" id="leaderboardModalCloseBtn">完成</button>
+      </div>
+    </div>
+  </div>
+
+
+  <div class="modal-backdrop" id="playerModal">
+    <div class="card modal">
+      <div class="modal-tag" style="color:#67e8f9;">进入游戏</div>
+      <div class="modal-title">先输入你的名称</div>
+      <div class="modal-subtitle">为了记录排行榜数据，进入游戏前需要填写玩家名称。名称和当前进度都会保存在本机，更新网页版本后也能继续开始。</div>
+      <div style="margin-top:18px; display:grid; gap:10px;">
+        <input class="field" id="playerNameInput" type="text" maxlength="20" placeholder="输入 2~20 个字符，例如：KC测试号" />
+        <div class="form-help" id="playerModalHint">配置好 Supabase 后，会自动注册/更新到线上 players 表。</div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-primary" id="playerStartBtn">确认并开始</button>
+        <button class="btn-secondary" id="playerCancelBtn">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const COLS = 7;
+    const ROWS = 12;
+    const CELL = 50;
+    const BOARD_W = COLS * CELL;
+    const BOARD_H = ROWS * CELL;
+    const LAUNCH_GUTTER = 28;
+    const LAUNCH_Y = BOARD_H + LAUNCH_GUTTER;
+    const LAUNCH_ORIGIN_Y = BOARD_H + 10;
+    const AIM_MAX_Y = LAUNCH_ORIGIN_Y - 2;
+    const BASE_SCORE = 20;
+    const MAX_BALLS = 28;
+    const BALL_SPEED = 780;
+    const BALL_RADIUS = 7;
+    const MAX_BALL_LIFETIME = 20;
+    const BALL_TIMEOUT_IDLE_GRACE = 3;
+    const REPLENISH_ANIMATION_INTERVAL = 0.12;
+    const MIN_SHOT_UPWARD = 0.035;
+    const PREVIEW_EPS = 0.01;
+    const PREVIEW_MAX_STEPS = 12;
+    const PREVIEW_TRACE_STEP = 2;
+    const TEMPLATE_HEIGHT = 6;
+    const SAFE_ROWS = 6;
+    const INITIAL_FILLED_ROWS = Math.max(1, ROWS - SAFE_ROWS);
+    const START_ENERGY = 30;
+    const START_MAX_ENERGY = 30;
+    const INITIAL_BALL_COUNT = 8;
+    const FAST_FORWARD_THRESHOLD = 0.3;
+    const FAST_FORWARD_MULTIPLIER = 2;
+    const TIME_ACCEL_START_SECONDS = 20;
+    const TIME_ACCEL_RAMP_SECONDS = 12;
+    const TIME_ACCEL_MAX_MULTIPLIER = 15;
+    const MAX_SIM_STEP = 4;
+    const COLLISION_GRACE_STEPS = 4;
+    const POST_BOUNCE_PUSH = 3.2;
+    const DEFAULT_BAFFLE_WIDTH_CELLS = 1.4;
+    const MIN_REPLENISH_TRIGGER_LAYERS = 3;
+    const MAX_REPLENISH_TRIGGER_LAYERS = 6;
+    const BASE_REPLENISH_TARGET_LAYERS = 6;
+    const MAX_REPLENISH_TARGET_LAYERS = 9;
+    const REPLENISH_TARGET_FULL_ENERGY_SPENT = 150;
+    const BASE_SAFE_EMPTY_ROWS_AFTER_REPLENISH = 6;
+    const MIN_SAFE_EMPTY_ROWS_AFTER_REPLENISH = 3;
+    const LIVE_SYNC_INTERVAL_MS = 1200;
+    const LEADERBOARD_AUTO_REFRESH_MS = 4000;
+    const LIGHTNING_DAMAGE_MULT = 2;
+    const LIGHTNING_MIN_DAMAGE = 2;
+    const LIGHTNING_EFFECT_TTL = 16;
+    const EASY_HP_BASE = 0.72;
+    const EASY_HP_STEP = 0.06;
+    const HARD_HP_BASE = 1.24;
+    const HARD_HP_STEP = 0.12;
+    const HARD_UNLOCK_ENERGY_SPENT = 30;
+    const HARD_CHANCE_MIN = 0.12;
+    const HARD_CHANCE_MAX = 0.8;
+    const HARD_CHANCE_FULL_ENERGY_SPENT = 100;
+    const STORAGE_KEY = 'starmap-prototype-profile-v2';
+    const PLAYER_STORAGE_KEY = 'starmap-player-profile-v1';
+    const RUN_STORAGE_KEY = 'starmap-online-session-v32r3depth';
+    const PROGRESS_STORAGE_KEY = 'starmap-online-progress-v32r3depth';
+    const DEVICE_STORAGE_KEY = 'starmap-device-id-v1';
+    const RUN_VERSION = 'web-online-v6';
+    const MIN_EFFICIENCY_TOTAL_ENERGY = 10;
+    const LEADERBOARD_LIMIT = 100;
+    const LEADERBOARD_PREVIEW_LIMIT = 3;
+    const LEADERBOARD_PAGE_SIZE = 10;
+    const SUPABASE_URL = 'https://dkaabuxszrbnnrajnoaa.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_8UjZAjC-Ts2NiP8_NpmFdA_jv-CEzhd';
+
+    const objectMeta = {
+      plus: { label: '+球', icon: '+', hint: '本回合结束后增加库存球', colors: ['#10b981', '#14b8a6'] },
+      big: { label: '变大', icon: '⬤', hint: '库存球经过后变大', colors: ['#06b6d4', '#38bdf8'] },
+      split2: { label: '1变2', icon: '⫶', hint: '库存球额外复制1颗', colors: ['#6366f1', '#8b5cf6'] },
+      split3: { label: '1变3', icon: '✦', hint: '库存球分裂成三向', colors: ['#d946ef', '#ec4899'] },
+      blackhole: { label: '黑洞', icon: '◉', hint: '首球激活，随后吞球', colors: ['#0f172a', '#334155'] },
+      lightRow: { label: '横闪', icon: '↔', hint: '对所在行造成伤害', colors: ['#fbbf24', '#fde047'] },
+      lightCol: { label: '纵闪', icon: '↕', hint: '对所在列造成伤害', colors: ['#f59e0b', '#fb923c'] },
+      lightCross: { label: '十字', icon: '✛', hint: '对所在行列造成伤害', colors: ['#facc15', '#fbbf24'] },
+    };
+
+
+    const brickMeta = {
+      normal: { label: '普通', colors: ['#a16207', '#f59e0b'] },
+      shield: { label: '格挡', colors: ['#7dd3fc', '#e0f2fe'] },
+      heal: { label: '回血', colors: ['#e11d48', '#ec4899'] },
+      stealth: { label: '隐身', colors: ['#0284c7', '#2563eb'] },
+      symMain: { label: '共生主', colors: ['#312e81', '#1d4ed8'] },
+      symSub: { label: '共生从', colors: ['#3730a3', '#2563eb'] },
+    };
+
+    const TEMPLATE_POOL = [
+      {
+        id: 't01', name: '钻石阵', tier: 'easy',
+        rows: [
+          [{ kind: 'brick', col: 3, type: 'normal', shape: 1, hp: 7 }],
+          [{ kind: 'brick', col: 2, type: 'normal', shape: 5, hp: 6 }, { kind: 'brick', col: 4, type: 'normal', shape: 4, hp: 6 }],
+          [{ kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 6 }, { kind: 'object', col: 3, type: 'plus' }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 6 }],
+          [{ kind: 'brick', col: 2, type: 'shield', hp: 8 }, { kind: 'brick', col: 4, type: 'shield', hp: 8 }],
+          [{ kind: 'brick', col: 3, type: 'heal', hp: 9 }],
+          [{ kind: 'object', col: 1, type: 'split2' }, { kind: 'brick', col: 3, type: 'normal', shape: 1, hp: 8 }, { kind: 'object', col: 5, type: 'split3' }],
+        ],
+      },
+      {
+        id: 't02', name: '双塔', tier: 'easy',
+        rows: [
+          [{ kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 8 }],
+          [{ kind: 'brick', col: 1, type: 'shield', hp: 9 }, { kind: 'brick', col: 5, type: 'shield', hp: 9 }],
+          [{ kind: 'brick', col: 1, type: 'normal', shape: 2, hp: 6 }, { kind: 'object', col: 3, type: 'lightRow' }, { kind: 'brick', col: 5, type: 'normal', shape: 3, hp: 6 }],
+          [{ kind: 'brick', col: 1, type: 'heal', hp: 8 }, { kind: 'brick', col: 5, type: 'heal', hp: 8 }],
+          [{ kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 7 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 7 }],
+          [{ kind: 'object', col: 0, type: 'plus' }, { kind: 'brick', col: 3, type: 'normal', shape: 1, hp: 9 }, { kind: 'object', col: 6, type: 'plus' }],
+        ],
+      },
+      {
+        id: 't03', name: '蛇形桥', tier: 'easy',
+        rows: [
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 3, hp: 6 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 6 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 6 }],
+          [{ kind: 'object', col: 2, type: 'big' }, { kind: 'brick', col: 3, type: 'normal', shape: 4, hp: 6 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 6 }],
+          [{ kind: 'brick', col: 4, type: 'stealth', hp: 8 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 7 }, { kind: 'brick', col: 6, type: 'normal', shape: 2, hp: 6 }],
+          [{ kind: 'object', col: 4, type: 'lightCol' }, { kind: 'brick', col: 3, type: 'normal', shape: 1, hp: 7 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 7 }],
+          [{ kind: 'brick', col: 1, type: 'normal', shape: 5, hp: 6 }, { kind: 'object', col: 0, type: 'blackhole' }],
+          [{ kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 3, type: 'shield', hp: 8 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 8 }],
+        ],
+      },
+      {
+        id: 't04', name: '压缩方阵', tier: 'hard',
+        rows: [
+          [{ kind: 'brick', col: 0, type: 'shield', hp: 9 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 3, type: 'heal', hp: 10 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 6, type: 'shield', hp: 9 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 2, type: 'shield', hp: 9 }, { kind: 'object', col: 3, type: 'lightCross' }, { kind: 'brick', col: 4, type: 'shield', hp: 9 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 8 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 8 }, { kind: 'object', col: 3, type: 'big' }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 8 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 1, type: 'normal', shape: 4, hp: 7 }, { kind: 'brick', col: 2, type: 'shield', hp: 9 }, { kind: 'brick', col: 4, type: 'shield', hp: 9 }, { kind: 'brick', col: 5, type: 'normal', shape: 5, hp: 7 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 8 }],
+          [{ kind: 'brick', col: 0, type: 'shield', hp: 9 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 6, type: 'shield', hp: 9 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 1, type: 'normal', shape: 2, hp: 7 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 5, type: 'normal', shape: 3, hp: 7 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 8 }],
+        ],
+      },
+      {
+        id: 't05', name: '隐身斜坡', tier: 'easy',
+        rows: [
+          [{ kind: 'brick', col: 0, type: 'stealth', hp: 8 }, { kind: 'brick', col: 1, type: 'normal', shape: 5, hp: 6 }],
+          [{ kind: 'brick', col: 1, type: 'stealth', hp: 8 }, { kind: 'brick', col: 2, type: 'normal', shape: 5, hp: 6 }],
+          [{ kind: 'brick', col: 2, type: 'stealth', hp: 8 }, { kind: 'object', col: 4, type: 'plus' }],
+          [{ kind: 'brick', col: 3, type: 'stealth', hp: 8 }, { kind: 'brick', col: 4, type: 'normal', shape: 5, hp: 6 }],
+          [{ kind: 'brick', col: 4, type: 'stealth', hp: 8 }, { kind: 'brick', col: 5, type: 'normal', shape: 5, hp: 6 }],
+          [{ kind: 'brick', col: 5, type: 'stealth', hp: 8 }, { kind: 'brick', col: 6, type: 'normal', shape: 5, hp: 6 }],
+        ],
+      },
+      {
+        id: 't06', name: '窄口弹仓', tier: 'hard',
+        rows: [
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 1, type: 'shield', hp: 9 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 3, type: 'heal', hp: 10 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 5, type: 'shield', hp: 9 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 8 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 2, type: 'shield', hp: 9 }, { kind: 'object', col: 3, type: 'lightRow' }, { kind: 'brick', col: 4, type: 'shield', hp: 9 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 8 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 1, type: 'normal', shape: 4, hp: 7 }, { kind: 'object', col: 2, type: 'split2' }, { kind: 'brick', col: 4, type: 'normal', shape: 5, hp: 7 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 8 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 1, type: 'shield', hp: 9 }, { kind: 'object', col: 2, type: 'big' }, { kind: 'object', col: 4, type: 'split3' }, { kind: 'brick', col: 5, type: 'shield', hp: 9 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 8 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 8 }],
+          [{ kind: 'brick', col: 0, type: 'shield', hp: 9 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 2, type: 'normal', shape: 2, hp: 7 }, { kind: 'brick', col: 4, type: 'normal', shape: 3, hp: 7 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 6, type: 'shield', hp: 9 }],
+        ],
+      },
+      {
+        id: 't07', name: '蜂巢回廊', tier: 'hard',
+        rows: [
+          [{ kind: 'brick', col: 0, type: 'shield', hp: 9 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 3, type: 'heal', hp: 10 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 6, type: 'shield', hp: 9 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 2, type: 'shield', hp: 9 }, { kind: 'brick', col: 3, type: 'normal', shape: 1, hp: 8 }, { kind: 'object', col: 4, type: 'big' }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 8 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 8 }, { kind: 'object', col: 1, type: 'plus' }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 3, type: 'shield', hp: 9 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 8 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 8 }, { kind: 'object', col: 3, type: 'lightCol' }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 6, type: 'shield', hp: 9 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 8 }, { kind: 'object', col: 2, type: 'split2' }, { kind: 'brick', col: 3, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 8 }],
+          [{ kind: 'brick', col: 0, type: 'shield', hp: 9 }, { kind: 'object', col: 1, type: 'big' }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 3, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 5, type: 'shield', hp: 9 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 8 }],
+        ],
+      },
+      {
+        id: 't08', name: '雷暴仓室', tier: 'hard',
+        rows: [
+          [{ kind: 'brick', col: 0, type: 'shield', hp: 9 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 3, type: 'heal', hp: 10 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 6, type: 'shield', hp: 9 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 2, type: 'shield', hp: 9 }, { kind: 'object', col: 3, type: 'lightCross' }, { kind: 'brick', col: 4, type: 'shield', hp: 9 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 8 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 8 }, { kind: 'object', col: 1, type: 'lightRow' }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 8 }, { kind: 'object', col: 5, type: 'lightRow' }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 8 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 8 }],
+          [{ kind: 'brick', col: 0, type: 'shield', hp: 9 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 8 }, { kind: 'object', col: 2, type: 'lightCol' }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 8 }, { kind: 'object', col: 5, type: 'lightCol' }, { kind: 'brick', col: 6, type: 'shield', hp: 9 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 1, type: 'normal', shape: 2, hp: 7 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 5, type: 'normal', shape: 3, hp: 7 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 8 }],
+        ],
+      },
+      {
+        id: 't09', name: '三角雨', tier: 'easy',
+        rows: [
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 3, hp: 6 }, { kind: 'brick', col: 2, type: 'normal', shape: 2, hp: 6 }, { kind: 'brick', col: 4, type: 'normal', shape: 3, hp: 6 }, { kind: 'brick', col: 6, type: 'normal', shape: 2, hp: 6 }],
+          [{ kind: 'brick', col: 1, type: 'normal', shape: 5, hp: 6 }, { kind: 'brick', col: 3, type: 'normal', shape: 4, hp: 6 }, { kind: 'brick', col: 5, type: 'normal', shape: 5, hp: 6 }],
+          [{ kind: 'object', col: 3, type: 'split3' }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 4, hp: 7 }, { kind: 'brick', col: 2, type: 'normal', shape: 5, hp: 7 }, { kind: 'brick', col: 4, type: 'normal', shape: 4, hp: 7 }, { kind: 'brick', col: 6, type: 'normal', shape: 5, hp: 7 }],
+          [{ kind: 'brick', col: 1, type: 'shield', hp: 8 }, { kind: 'brick', col: 3, type: 'heal', hp: 9 }, { kind: 'brick', col: 5, type: 'shield', hp: 8 }],
+          [{ kind: 'object', col: 1, type: 'plus' }, { kind: 'object', col: 5, type: 'plus' }],
+        ],
+      },
+      {
+        id: 't10', name: '双口回廊', tier: 'hard',
+        rows: [
+          [{ kind: 'brick', col: 0, type: 'shield', hp: 9 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 3, type: 'heal', hp: 10 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 6, type: 'shield', hp: 9 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 8 }, { kind: 'object', col: 1, type: 'split2' }, { kind: 'brick', col: 2, type: 'shield', hp: 9 }, { kind: 'brick', col: 3, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 4, type: 'shield', hp: 9 }, { kind: 'object', col: 5, type: 'split2' }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 8 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 1, type: 'shield', hp: 9 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 8 }, { kind: 'object', col: 3, type: 'lightCross' }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 5, type: 'shield', hp: 9 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 8 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 8 }, { kind: 'object', col: 2, type: 'big' }, { kind: 'brick', col: 3, type: 'heal', hp: 10 }, { kind: 'object', col: 4, type: 'big' }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 8 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 3, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 8 }],
+          [{ kind: 'brick', col: 0, type: 'shield', hp: 9 }, { kind: 'brick', col: 1, type: 'normal', shape: 2, hp: 7 }, { kind: 'brick', col: 3, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 5, type: 'normal', shape: 3, hp: 7 }, { kind: 'brick', col: 6, type: 'shield', hp: 9 }],
+        ],
+      },
+      {
+        id: 't11', name: '空心堡垒', tier: 'easy',
+        rows: [
+          [{ kind: 'brick', col: 1, type: 'shield', hp: 8 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 7 }, { kind: 'brick', col: 3, type: 'normal', shape: 1, hp: 7 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 7 }, { kind: 'brick', col: 5, type: 'shield', hp: 8 }],
+          [{ kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 7 }, { kind: 'object', col: 3, type: 'split2' }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 7 }],
+          [{ kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 7 }, { kind: 'object', col: 2, type: 'plus' }, { kind: 'object', col: 4, type: 'plus' }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 7 }],
+          [{ kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 7 }, { kind: 'object', col: 3, type: 'lightCross' }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 7 }],
+          [{ kind: 'brick', col: 1, type: 'normal', shape: 4, hp: 6 }, { kind: 'brick', col: 2, type: 'shield', hp: 8 }, { kind: 'brick', col: 3, type: 'heal', hp: 9 }, { kind: 'brick', col: 4, type: 'shield', hp: 8 }, { kind: 'brick', col: 5, type: 'normal', shape: 5, hp: 6 }],
+          [{ kind: 'object', col: 0, type: 'big' }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 3, type: 'normal', shape: 1, hp: 8 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 8 }, { kind: 'object', col: 6, type: 'split3' }],
+        ],
+      },
+      {
+        id: 't12', name: '中轴直线', tier: 'easy',
+        rows: [
+          [{ kind: 'brick', col: 3, type: 'shield', hp: 9 }],
+          [{ kind: 'brick', col: 3, type: 'normal', shape: 1, hp: 8 }, { kind: 'object', col: 1, type: 'plus' }, { kind: 'object', col: 5, type: 'plus' }],
+          [{ kind: 'brick', col: 3, type: 'heal', hp: 10 }, { kind: 'brick', col: 2, type: 'normal', shape: 2, hp: 6 }, { kind: 'brick', col: 4, type: 'normal', shape: 3, hp: 6 }],
+          [{ kind: 'object', col: 3, type: 'lightCol' }],
+          [{ kind: 'brick', col: 3, type: 'normal', shape: 1, hp: 8 }, { kind: 'object', col: 2, type: 'big' }, { kind: 'object', col: 4, type: 'split2' }],
+          [{ kind: 'brick', col: 2, type: 'normal', shape: 4, hp: 7 }, { kind: 'brick', col: 3, type: 'shield', hp: 9 }, { kind: 'brick', col: 4, type: 'normal', shape: 5, hp: 7 }],
+        ],
+      },
+      {
+        id: 't13', name: '三横清场', tier: 'hard',
+        rows: [
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 9 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 9 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 9 }, { kind: 'object', col: 3, type: 'lightRow' }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 9 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 9 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 9 }],
+          [{ kind: 'brick', col: 1, type: 'shield', hp: 10 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 9 }, { kind: 'brick', col: 3, type: 'heal', hp: 11 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 9 }, { kind: 'brick', col: 5, type: 'shield', hp: 10 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 9 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 9 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 9 }, { kind: 'object', col: 3, type: 'lightCross' }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 9 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 9 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 9 }],
+          [{ kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 9 }, { kind: 'object', col: 2, type: 'big' }, { kind: 'brick', col: 3, type: 'shield', hp: 10 }, { kind: 'object', col: 4, type: 'split3' }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 9 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 9 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 9 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 9 }, { kind: 'object', col: 3, type: 'lightRow' }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 9 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 9 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 9 }],
+          [{ kind: 'brick', col: 0, type: 'shield', hp: 10 }, { kind: 'brick', col: 2, type: 'normal', shape: 2, hp: 8 }, { kind: 'brick', col: 3, type: 'heal', hp: 11 }, { kind: 'brick', col: 4, type: 'normal', shape: 3, hp: 8 }, { kind: 'brick', col: 6, type: 'shield', hp: 10 }],
+        ],
+      },
+      {
+        id: 't14', name: '回字弹仓', tier: 'hard',
+        rows: [
+          [{ kind: 'brick', col: 0, type: 'shield', hp: 10 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 9 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 9 }, { kind: 'brick', col: 3, type: 'normal', shape: 1, hp: 9 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 9 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 9 }, { kind: 'brick', col: 6, type: 'shield', hp: 10 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 9 }, { kind: 'brick', col: 2, type: 'shield', hp: 10 }, { kind: 'object', col: 3, type: 'split2' }, { kind: 'brick', col: 4, type: 'shield', hp: 10 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 9 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 9 }, { kind: 'object', col: 1, type: 'big' }, { kind: 'brick', col: 5, type: 'heal', hp: 11 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 9 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 9 }, { kind: 'object', col: 1, type: 'lightCol' }, { kind: 'brick', col: 5, type: 'shield', hp: 10 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 9 }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 9 }, { kind: 'brick', col: 2, type: 'shield', hp: 10 }, { kind: 'object', col: 3, type: 'lightCross' }, { kind: 'brick', col: 4, type: 'shield', hp: 10 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 9 }],
+          [{ kind: 'brick', col: 0, type: 'shield', hp: 10 }, { kind: 'brick', col: 1, type: 'normal', shape: 4, hp: 8 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 9 }, { kind: 'brick', col: 3, type: 'heal', hp: 11 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 9 }, { kind: 'brick', col: 5, type: 'normal', shape: 5, hp: 8 }, { kind: 'brick', col: 6, type: 'shield', hp: 10 }],
+        ],
+      },
+      {
+        id: 't15', name: '横梁连锁', tier: 'easy',
+        rows: [
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 1, hp: 7 }, { kind: 'brick', col: 1, type: 'normal', shape: 1, hp: 7 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 7 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 7 }, { kind: 'brick', col: 5, type: 'normal', shape: 1, hp: 7 }, { kind: 'brick', col: 6, type: 'normal', shape: 1, hp: 7 }],
+          [{ kind: 'object', col: 3, type: 'lightRow' }],
+          [{ kind: 'brick', col: 1, type: 'shield', hp: 8 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 7 }, { kind: 'brick', col: 3, type: 'heal', hp: 9 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 7 }, { kind: 'brick', col: 5, type: 'shield', hp: 8 }],
+          [{ kind: 'object', col: 2, type: 'plus' }, { kind: 'object', col: 4, type: 'plus' }],
+          [{ kind: 'brick', col: 0, type: 'normal', shape: 2, hp: 6 }, { kind: 'brick', col: 2, type: 'normal', shape: 1, hp: 7 }, { kind: 'brick', col: 3, type: 'normal', shape: 1, hp: 7 }, { kind: 'brick', col: 4, type: 'normal', shape: 1, hp: 7 }, { kind: 'brick', col: 6, type: 'normal', shape: 3, hp: 6 }],
+          [{ kind: 'object', col: 1, type: 'split3' }, { kind: 'brick', col: 3, type: 'shield', hp: 8 }, { kind: 'object', col: 5, type: 'big' }],
+        ],
+      },
+
+    ];
+
+    let uidSeed = 1;
+    let raf = null;
+    let lastTs = 0;
+    let screen = 'home';
+    let profile = loadProfile();
+    let run = createRun();
+    let supabaseClient = null;
+    const storedPlayerProfile = loadStoredPlayerProfile();
+    const net = {
+      configured: false,
+      ready: false,
+      playerId: storedPlayerProfile.playerId || null,
+      playerName: storedPlayerProfile.playerName || '',
+      boards: { single: [], stage: [], efficiency: [] },
+      boardMessage: '未配置 Supabase，当前仅记录本地数据。',
+      syncing: false,
+      submitting: false,
+      liveSyncing: false,
+      liveDirty: false,
+      liveSupport: 'unknown',
+      lastLiveSyncAt: 0,
+      lastLeaderboardLoadAt: 0,
+      onlineCount: null,
+    };
+    const leaderboardView = {
+      activeTab: 'single',
+      page: 1,
+      pageSize: LEADERBOARD_PAGE_SIZE,
+    };
+
+    const els = {
+      homeScreen: document.getElementById('homeScreen'),
+      gameScreen: document.getElementById('gameScreen'),
+      startBtn: document.getElementById('startBtn'),
+      resetProfileBtn: document.getElementById('resetProfileBtn'),
+      changePlayerBtn: document.getElementById('changePlayerBtn'),
+      restartBtn: document.getElementById('restartBtn'),
+      backHomeBtn: document.getElementById('backHomeBtn'),
+      profileCumulative: document.getElementById('profileCumulative'),
+      profileBest: document.getElementById('profileBest'),
+      profileRuns: document.getElementById('profileRuns'),
+      playerChip: document.getElementById('playerChip'),
+      syncChip: document.getElementById('syncChip'),
+      refreshBoardsBtn: document.getElementById('refreshBoardsBtn'),
+      homeBoardsBtn: document.getElementById('homeBoardsBtn'),
+      openBoardsBtn: document.getElementById('openBoardsBtn'),
+      leaderboardStatus: document.getElementById('leaderboardStatus'),
+      singleBoardPreviewValue: document.getElementById('singleBoardPreviewValue'),
+      singleBoardPreviewSub: document.getElementById('singleBoardPreviewSub'),
+      stageBoardPreviewValue: document.getElementById('stageBoardPreviewValue'),
+      stageBoardPreviewSub: document.getElementById('stageBoardPreviewSub'),
+      efficiencyBoardPreviewValue: document.getElementById('efficiencyBoardPreviewValue'),
+      efficiencyBoardPreviewSub: document.getElementById('efficiencyBoardPreviewSub'),
+      leaderboardModal: document.getElementById('leaderboardModal'),
+      leaderboardModalStatus: document.getElementById('leaderboardModalStatus'),
+      leaderboardModalMessage: document.getElementById('leaderboardModalMessage'),
+      leaderboardPlayerName: document.getElementById('leaderboardPlayerName'),
+      leaderboardRunSummary: document.getElementById('leaderboardRunSummary'),
+      leaderboardEfficiencyGate: document.getElementById('leaderboardEfficiencyGate'),
+      goalBestScore: document.getElementById('goalBestScore'),
+      goalBestScoreSub: document.getElementById('goalBestScoreSub'),
+      goalSingleRank: document.getElementById('goalSingleRank'),
+      goalSingleRankSub: document.getElementById('goalSingleRankSub'),
+      goalStageRank: document.getElementById('goalStageRank'),
+      goalStageRankSub: document.getElementById('goalStageRankSub'),
+      goalEfficiency: document.getElementById('goalEfficiency'),
+      goalEfficiencySub: document.getElementById('goalEfficiencySub'),
+      goalChaseMain: document.getElementById('goalChaseMain'),
+      goalChaseSub: document.getElementById('goalChaseSub'),
+      goalFootnote: document.getElementById('goalFootnote'),
+      goalArenaCount: document.getElementById('goalArenaCount'),
+      goalArenaPulse: document.getElementById('goalArenaPulse'),
+      goalArenaRankChip: document.getElementById('goalArenaRankChip'),
+      goalArenaBeatChip: document.getElementById('goalArenaBeatChip'),
+      goalArenaGapChip: document.getElementById('goalArenaGapChip'),
+      goalArenaMomentum: document.getElementById('goalArenaMomentum'),
+      goalArenaProgress: document.getElementById('goalArenaProgress'),
+      goalArenaBeatMini: document.getElementById('goalArenaBeatMini'),
+      goalArenaChaseMini: document.getElementById('goalArenaChaseMini'),
+      goalArenaTier: document.getElementById('goalArenaTier'),
+      leaderboardTabs: Array.from(document.querySelectorAll('[data-board-tab]')),
+      leaderboardModalBoardTitle: document.getElementById('leaderboardModalBoardTitle'),
+      leaderboardModalBoardSub: document.getElementById('leaderboardModalBoardSub'),
+      leaderboardModalBoardMeta: document.getElementById('leaderboardModalBoardMeta'),
+      leaderboardModalTable: document.getElementById('leaderboardModalTable'),
+      leaderboardPageInfo: document.getElementById('leaderboardPageInfo'),
+      leaderboardPrevPageBtn: document.getElementById('leaderboardPrevPageBtn'),
+      leaderboardNextPageBtn: document.getElementById('leaderboardNextPageBtn'),
+      leaderboardModalRefreshBtn: document.getElementById('leaderboardModalRefreshBtn'),
+      leaderboardModalCloseTopBtn: document.getElementById('leaderboardModalCloseTopBtn'),
+      leaderboardModalCloseBtn: document.getElementById('leaderboardModalCloseBtn'),
+      leaderboardModalCloseXBtn: document.getElementById('leaderboardModalCloseXBtn'),
+      gameBoardsBtn: document.getElementById('gameBoardsBtn'),
+      statScore: document.getElementById('statScore'),
+      statEnergy: document.getElementById('statEnergy'),
+      statBall: document.getElementById('statBall'),
+      statLevel: document.getElementById('statLevel'),
+      statPower: document.getElementById('statPower'),
+      boardHint: document.getElementById('boardHint'),
+      progressText: document.getElementById('progressText'),
+      progressBar: document.getElementById('progressBar'),
+      itemSplit3: document.getElementById('itemSplit3'),
+      itemSplit3Title: document.getElementById('itemSplit3Title'),
+      itemBlast: document.getElementById('itemBlast'),
+      itemBlastTitle: document.getElementById('itemBlastTitle'),
+      itemBlastHint: document.getElementById('itemBlastHint'),
+      itemClear: document.getElementById('itemClear'),
+      itemClearTitle: document.getElementById('itemClearTitle'),
+      baffleInfo: document.getElementById('baffleInfo'),
+      baffleBtn: document.getElementById('baffleBtn'),
+      energyInfo: document.getElementById('energyInfo'),
+      templateInfo: document.getElementById('templateInfo'),
+      energyAdd5Btn: document.getElementById('energyAdd5Btn'),
+      energyAdd10Btn: document.getElementById('energyAdd10Btn'),
+      energyFillBtn: document.getElementById('energyFillBtn'),
+      logList: document.getElementById('logList'),
+      metaList: document.getElementById('metaList'),
+      board: document.getElementById('board'),
+      gameOverModal: document.getElementById('gameOverModal'),
+      energyModal: document.getElementById('energyModal'),
+      finalScore: document.getElementById('finalScore'),
+      finalLevel: document.getElementById('finalLevel'),
+      finalRounds: document.getElementById('finalRounds'),
+      finalRating: document.getElementById('finalRating'),
+      finalRatingSub: document.getElementById('finalRatingSub'),
+      finalBeatPercent: document.getElementById('finalBeatPercent'),
+      finalBeatPercentSub: document.getElementById('finalBeatPercentSub'),
+      finalSingleRank: document.getElementById('finalSingleRank'),
+      finalSingleRankSub: document.getElementById('finalSingleRankSub'),
+      finalStageRank: document.getElementById('finalStageRank'),
+      finalStageRankSub: document.getElementById('finalStageRankSub'),
+      finalGoalTip: document.getElementById('finalGoalTip'),
+      finalArenaTip: document.getElementById('finalArenaTip'),
+      playAgainBtn: document.getElementById('playAgainBtn'),
+      modalHomeBtn: document.getElementById('modalHomeBtn'),
+      energyModalAdd5Btn: document.getElementById('energyModalAdd5Btn'),
+      energyModalAdd10Btn: document.getElementById('energyModalAdd10Btn'),
+      energyModalFillBtn: document.getElementById('energyModalFillBtn'),
+      energyModalCloseBtn: document.getElementById('energyModalCloseBtn'),
+      playerModal: document.getElementById('playerModal'),
+      playerNameInput: document.getElementById('playerNameInput'),
+      playerModalHint: document.getElementById('playerModalHint'),
+      playerStartBtn: document.getElementById('playerStartBtn'),
+      playerCancelBtn: document.getElementById('playerCancelBtn'),
+    };
+    const ctx = els.board.getContext('2d');
+    let energyModalOpen = false;
+
+    function uid(prefix = 'id') { return `${prefix}_${Date.now()}_${uidSeed++}_${Math.random().toString(16).slice(2, 8)}`; }
+    function clamp(n, min, max) { return Math.min(max, Math.max(min, n)); }
+    function rand(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+    function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+    function round2(n) { return Math.round(n * 100) / 100; }
+    function cellCenter(col, row) { return { x: col * CELL + CELL / 2, y: row * CELL + CELL / 2 }; }
+    function chooseRandomBaffleX(widthCells = DEFAULT_BAFFLE_WIDTH_CELLS) {
+      const half = Math.max(CELL * 0.75, (widthCells * CELL) / 2);
+      return rand(Math.ceil(half + 4), Math.floor(BOARD_W - half - 4));
+    }
+    function nextStageNeed(level) { return 8 + level * 3; }
+    function totalBallPower(run) { return run.ballCount * run.ballDamage; }
+    function getBaffleBallCost(targetLevel) {
+      return INITIAL_BALL_COUNT + Math.max(0, targetLevel - 1) * 4;
+    }
+    function ballFill(damage) {
+      if (damage <= 1) return '#ffffff';
+      if (damage === 2) return '#34d399';
+      if (damage === 3) return '#38bdf8';
+      if (damage === 4) return '#a78bfa';
+      return '#fb923c';
+    }
+
+    function loadProfile() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return { cumulativeScore: 0, bestRunScore: 0, totalRuns: 0 };
+        return JSON.parse(raw);
+      } catch {
+        return { cumulativeScore: 0, bestRunScore: 0, totalRuns: 0 };
+      }
+    }
+    function saveProfile() {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(profile)); } catch {}
+    }
+
+
+    function loadStoredPlayerProfile() {
+      try {
+        const raw = localStorage.getItem(PLAYER_STORAGE_KEY);
+        if (!raw) return { playerName: '', playerId: null };
+        const parsed = JSON.parse(raw);
+        return {
+          playerName: parsed && parsed.playerName ? String(parsed.playerName) : '',
+          playerId: parsed && parsed.playerId ? String(parsed.playerId) : null,
+        };
+      } catch {
+        return { playerName: '', playerId: null };
+      }
+    }
+    function loadStoredPlayerName() {
+      return loadStoredPlayerProfile().playerName || '';
+    }
+    function saveStoredPlayer(profileData) {
+      try {
+        const current = loadStoredPlayerProfile();
+        localStorage.setItem(PLAYER_STORAGE_KEY, JSON.stringify({
+          playerName: profileData && profileData.playerName ? String(profileData.playerName) : current.playerName || '',
+          playerId: profileData && profileData.playerId ? String(profileData.playerId) : current.playerId || null,
+        }));
+      } catch {}
+    }
+    function hasMeaningfulProgress(targetRun) {
+      if (!targetRun || typeof targetRun !== 'object') return false;
+      return !!(
+        targetRun.currentRunScore > 0 ||
+        targetRun.roundIndex > 1 ||
+        targetRun.stageLevel > 1 ||
+        targetRun.energySpent > 0 ||
+        targetRun.energy !== START_ENERGY ||
+        (Array.isArray(targetRun.bricks) && targetRun.bricks.length > 0) ||
+        (Array.isArray(targetRun.activeBalls) && targetRun.activeBalls.length > 0) ||
+        screen === 'game'
+      );
+    }
+    function normalizeLoadedRun(savedRun) {
+      if (!savedRun || typeof savedRun !== 'object') return null;
+      const base = createRun();
+      const merged = {
+        ...base,
+        ...savedRun,
+        aimPoint: { ...base.aimPoint, ...(savedRun.aimPoint || {}) },
+        items: { ...base.items, ...(savedRun.items || {}) },
+        baffle: { ...base.baffle, ...(savedRun.baffle || {}) },
+        finalSummary: savedRun.finalSummary ? { ...savedRun.finalSummary } : null,
+        effects: Array.isArray(savedRun.effects) ? savedRun.effects.map(fx => ({ ...fx })) : [],
+        activeBalls: Array.isArray(savedRun.activeBalls) ? savedRun.activeBalls.map(ball => ({ ...ball, radius: ball.radius || BALL_RADIUS, collisionGrace: Number.isFinite(ball.collisionGrace) ? ball.collisionGrace : 0, age: Number.isFinite(ball.age) ? ball.age : 0, idleAge: Number.isFinite(ball.idleAge) ? ball.idleAge : 0, progressAge: Number.isFinite(ball.progressAge) ? ball.progressAge : 0 })) : [],
+        bricks: Array.isArray(savedRun.bricks) ? savedRun.bricks.map(brick => ({ ...brick })) : base.bricks,
+        objects: Array.isArray(savedRun.objects) ? savedRun.objects.map(obj => ({ ...obj })) : base.objects,
+        logs: Array.isArray(savedRun.logs) && savedRun.logs.length ? [...savedRun.logs] : base.logs,
+        templateRowQueue: Array.isArray(savedRun.templateRowQueue) ? savedRun.templateRowQueue.map(row => ({
+          ...row,
+          bricks: Array.isArray(row.bricks) ? row.bricks.map(brick => ({ ...brick })) : [],
+          objects: Array.isArray(row.objects) ? row.objects.map(obj => ({ ...obj })) : [],
+        })) : base.templateRowQueue,
+        templateLineup: Array.isArray(savedRun.templateLineup) ? savedRun.templateLineup.map(item => ({ ...item })) : base.templateLineup,
+        pendingReplenishRows: Array.isArray(savedRun.pendingReplenishRows) ? savedRun.pendingReplenishRows.map(row => ({
+          ...row,
+          bricks: Array.isArray(row.bricks) ? row.bricks.map(brick => ({ ...brick })) : [],
+          objects: Array.isArray(row.objects) ? row.objects.map(obj => ({ ...obj })) : [],
+        })) : [],
+      };
+      merged.launcherCol = clamp(Number.isFinite(merged.launcherCol) ? merged.launcherCol : base.launcherCol, 0, COLS - 1);
+      merged.launcherX = cellCenter(merged.launcherCol, ROWS - 1).x;
+      merged.energy = Number.isFinite(merged.energy) ? merged.energy : base.energy;
+      merged.maxEnergy = Number.isFinite(merged.maxEnergy) ? merged.maxEnergy : base.maxEnergy;
+      merged.ballCount = Number.isFinite(merged.ballCount) ? merged.ballCount : base.ballCount;
+      merged.ballDamage = Number.isFinite(merged.ballDamage) ? merged.ballDamage : base.ballDamage;
+      merged.roundIndex = Number.isFinite(merged.roundIndex) ? merged.roundIndex : base.roundIndex;
+      merged.stageLevel = Number.isFinite(merged.stageLevel) ? merged.stageLevel : base.stageLevel;
+      merged.stageProgress = Number.isFinite(merged.stageProgress) ? merged.stageProgress : base.stageProgress;
+      merged.stageNeed = Number.isFinite(merged.stageNeed) ? merged.stageNeed : nextStageNeed(merged.stageLevel || 1);
+      merged.shotStartBalls = Number.isFinite(merged.shotStartBalls) ? merged.shotStartBalls : 0;
+      merged.shotElapsed = Number.isFinite(merged.shotElapsed) ? merged.shotElapsed : 0;
+      merged.speedMultiplier = Number.isFinite(merged.speedMultiplier) ? merged.speedMultiplier : 1;
+      merged.shotId = Number.isFinite(merged.shotId) ? merged.shotId : 0;
+      merged.lastResolvedShotId = Number.isFinite(merged.lastResolvedShotId) ? merged.lastResolvedShotId : 0;
+      merged.shieldBreakShotId = Number.isFinite(merged.shieldBreakShotId) ? merged.shieldBreakShotId : null;
+      merged.replenishAnimTimer = Number.isFinite(merged.replenishAnimTimer) ? merged.replenishAnimTimer : 0;
+      if (!merged.roundInProgress) {
+        merged.roundShieldBreakOnly = false;
+        merged.shieldBreakLogged = false;
+        merged.shieldBreakShotId = null;
+      }
+      merged.baffle.x = clamp(Number.isFinite(merged.baffle.x) ? merged.baffle.x : chooseRandomBaffleX(merged.baffle.widthCells || DEFAULT_BAFFLE_WIDTH_CELLS), 0, BOARD_W);
+      if (merged.status === 'gameover') return null;
+      return merged;
+    }
+    function loadSavedSession() {
+      try {
+        const raw = localStorage.getItem(RUN_STORAGE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return null;
+        const normalizedRun = normalizeLoadedRun(parsed.run);
+        if (!normalizedRun) return null;
+        return {
+          ...parsed,
+          run: normalizedRun,
+          savedAt: parsed.savedAt || null,
+          screen: parsed.screen || 'game',
+        };
+      } catch {
+        return null;
+      }
+    }
+    function createStableRunSnapshot(sourceRun) {
+      const normalized = normalizeLoadedRun(sourceRun);
+      if (!normalized) return null;
+      normalized.status = 'ready';
+      normalized.committed = false;
+      normalized.roundInProgress = false;
+      normalized.isDragging = false;
+      normalized.pendingText = '可发射';
+      normalized.mode = null;
+      normalized.hoverCell = null;
+      normalized.fastForward = false;
+      normalized.shotElapsed = 0;
+      normalized.shotStartBalls = 0;
+      normalized.speedMultiplier = 1;
+      normalized.lastResolvedShotId = normalized.shotId || 0;
+      normalized.roundShieldBreakOnly = false;
+      normalized.shieldBreakLogged = false;
+      normalized.shieldBreakShotId = null;
+      normalized.pendingReplenishRows = [];
+      normalized.replenishAnimTimer = 0;
+      normalized.activeBalls = [];
+      normalized.effects = [];
+      normalized.finalSummary = null;
+      normalized.shake = 0;
+      normalized.bounceGlow = 0;
+      return normalized;
+    }
+    function loadSavedProgress() {
+      try {
+        const raw = localStorage.getItem(PROGRESS_STORAGE_KEY);
+        if (!raw) return null;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return null;
+        const normalizedRun = createStableRunSnapshot(parsed.run);
+        if (!normalizedRun) return null;
+        return {
+          ...parsed,
+          run: normalizedRun,
+          savedAt: parsed.savedAt || null,
+          screen: 'game',
+        };
+      } catch {
+        return null;
+      }
+    }
+    function clearSavedSession() {
+      try { localStorage.removeItem(RUN_STORAGE_KEY); } catch {}
+    }
+    function clearSavedProgress() {
+      try { localStorage.removeItem(PROGRESS_STORAGE_KEY); } catch {}
+    }
+    function saveStableProgress(force = false) {
+      const savedPlayer = loadStoredPlayerProfile();
+      const playerName = net.playerName || savedPlayer.playerName || '';
+      const playerId = net.playerId || savedPlayer.playerId || null;
+      if (!playerName) {
+        if (force) clearSavedProgress();
+        return;
+      }
+      const stableRun = createStableRunSnapshot(run);
+      if (!stableRun || (!force && !hasMeaningfulProgress(stableRun))) return;
+      try {
+        localStorage.setItem(PROGRESS_STORAGE_KEY, JSON.stringify({
+          savedAt: Date.now(),
+          screen: 'game',
+          playerName,
+          playerId,
+          run: stableRun,
+        }));
+      } catch {}
+    }
+    function saveCurrentSession(force = false) {
+      const savedPlayer = loadStoredPlayerProfile();
+      const playerName = net.playerName || savedPlayer.playerName || '';
+      const playerId = net.playerId || savedPlayer.playerId || null;
+      if (!playerName) {
+        if (force) {
+          clearSavedSession();
+          clearSavedProgress();
+        }
+        return;
+      }
+      if (!force && !hasMeaningfulProgress(run)) return;
+      if (run.status === 'gameover') {
+        clearSavedSession();
+        clearSavedProgress();
+        return;
+      }
+      try {
+        localStorage.setItem(RUN_STORAGE_KEY, JSON.stringify({
+          savedAt: Date.now(),
+          screen,
+          playerName,
+          playerId,
+          run,
+        }));
+      } catch {}
+      if (!run.roundInProgress) saveStableProgress(force);
+    }
+    function hasSavedProgress() {
+      const stable = loadSavedProgress();
+      if (stable && stable.run) return true;
+      const session = loadSavedSession();
+      return !!(session && session.run);
+    }
+    function restoreSavedSession() {
+      const stable = loadSavedProgress();
+      const session = loadSavedSession();
+      const chosen = (stable && stable.run) ? stable : session;
+      if (!chosen || !chosen.run) return false;
+      run = chosen.run;
+      screen = 'game';
+      const savedPlayer = loadStoredPlayerProfile();
+      net.playerName = chosen.playerName || net.playerName || savedPlayer.playerName || '';
+      net.playerId = chosen.playerId || net.playerId || savedPlayer.playerId || null;
+      els.homeScreen.classList.add('hidden');
+      els.gameScreen.classList.remove('hidden');
+      hideGameOver();
+      hideEnergyModal();
+      return true;
+    }
+    function updateEntryButtons() {
+      const hasPlayer = !!(net.playerName || loadStoredPlayerProfile().playerName);
+      const canResume = hasSavedProgress();
+      els.startBtn.textContent = !hasPlayer ? '输入名称并开始' : (canResume ? '继续游戏' : '直接开始');
+      els.changePlayerBtn.textContent = hasPlayer ? '切换玩家' : '设置玩家';
+    }
+    function getDeviceId() {
+      try {
+        let id = localStorage.getItem(DEVICE_STORAGE_KEY);
+        if (!id) {
+          id = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : `dev_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+          localStorage.setItem(DEVICE_STORAGE_KEY, id);
+        }
+        return id;
+      } catch {
+        return `dev_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+      }
+    }
+    function hasSupabaseConfig() {
+      return !!SUPABASE_URL && !SUPABASE_URL.includes('YOUR-PROJECT') && !!SUPABASE_ANON_KEY && !SUPABASE_ANON_KEY.includes('YOUR_SUPABASE_ANON_KEY');
+    }
+    function initSupabase() {
+      net.configured = hasSupabaseConfig() && !!(window.supabase && window.supabase.createClient);
+      if (!net.configured) {
+        net.ready = false;
+        net.boardMessage = '未配置 Supabase URL / Anon Key，当前只做本地体验。';
+        return;
+      }
+      try {
+        supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        net.ready = true;
+        net.boardMessage = '已连接 Supabase，可读取排行榜并提交结算。';
+      } catch (err) {
+        console.error(err);
+        net.ready = false;
+        net.boardMessage = 'Supabase 初始化失败，请检查 URL / Key。';
+      }
+    }
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+    function formatBoardDate(value) {
+      if (!value) return '-';
+      const d = new Date(value);
+      if (Number.isNaN(d.getTime())) return '-';
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      return `${y}-${m}-${day} ${hh}:${mm}`;
+    }
+    function getLeaderboardMeta(type) {
+      if (type === 'single') {
+        return {
+          title: '单局总分榜',
+          sub: '按单局总分排序，同分按更早提交靠前。展示总分、单局最高关卡和记录时间。',
+          headers: ['排名', '玩家', '总分', '关卡', '记录时间'],
+        };
+      }
+      if (type === 'stage') {
+        return {
+          title: '最高关卡榜',
+          sub: '按玩家历史最高关卡排序，同分按最佳单局分数靠前。适合看冲关深度。',
+          headers: ['排名', '玩家', '最高关卡', '最佳单局', '总局数'],
+        };
+      }
+      return {
+        title: '平均分榜',
+        sub: '按总分 / 总体力排序，体现体力性价比。只统计总体力达到门槛的玩家。',
+        headers: ['排名', '玩家', '效率', '总分', '总体力', '总局数'],
+      };
+    }
+    function getBoardItems(type) {
+      if (type === 'single') return net.boards.single || [];
+      if (type === 'stage') return net.boards.stage || [];
+      return net.boards.efficiency || [];
+    }
+    
+    function getSingleBoardRows() {
+      return (net.boards.single || []).map(item => ({
+        name: item.player_name || item.player_name_snapshot || '未命名玩家',
+        score: Number(item.score || 0),
+        stage: Number(item.max_stage || 1),
+      }));
+    }
+    function getStageBoardRows() {
+      return (net.boards.stage || []).map(item => ({
+        name: item.player_name || item.player_name_snapshot || '未命名玩家',
+        highestStage: Number(item.highest_stage || item.max_stage || 0),
+        bestSingleScore: Number(item.best_single_score || item.score || 0),
+      }));
+    }
+    function getEfficiencyBoardRows() {
+      return (net.boards.efficiency || []).map(item => ({
+        name: item.player_name || item.player_name_snapshot || '未命名玩家',
+        efficiency: Number(item.avg_score_per_energy || 0),
+        totalEnergy: Number(item.total_energy || 0),
+      }));
+    }
+    function calculateBoardStanding(value, rows, getValue) {
+      if (!rows.length) return { rank: null, total: 0, gapToNext: null, percentile: null };
+      let rank = 1;
+      let nextBetterValue = null;
+      let beaten = 0;
+      rows.forEach(row => {
+        const rowValue = Number(getValue(row) || 0);
+        if (rowValue > value) {
+          rank += 1;
+          if (nextBetterValue === null || rowValue < nextBetterValue) nextBetterValue = rowValue;
+        }
+        if (value > rowValue) beaten += 1;
+      });
+      const gapToNext = nextBetterValue === null ? 0 : Math.max(1, Math.ceil(nextBetterValue - value));
+      const percentile = rows.length ? Math.max(0, Math.min(100, Math.round((beaten / rows.length) * 100))) : null;
+      return { rank, total: rows.length, gapToNext, percentile };
+    }
+    function formatRankLabel(rank, total) {
+      if (!rank || !total) return '--';
+      return `#${rank}`;
+    }
+    function getRatingByPercentile(percentile, score, stage) {
+      if (percentile >= 95 || score >= 12000 || stage >= 40) return { title: '星域统治者', sub: '已经接近榜单头部，继续追一点就可能改写榜首。' };
+      if (percentile >= 80 || score >= 7000 || stage >= 28) return { title: '冲榜高手', sub: '这局已经有很强的竞争力，适合盯着上一名去追。' };
+      if (percentile >= 55 || score >= 3500 || stage >= 18) return { title: '稳步攀升', sub: '这局已经超过不少玩家，再多打一段就能明显抬高排名。' };
+      if (percentile >= 30 || score >= 1200 || stage >= 10) return { title: '渐入佳境', sub: '已经打出节奏了，接下来重点追单局总分和关卡双榜。' };
+      return { title: '继续热身', sub: '先把分数和关卡打进更高区间，榜单追逐感会很快起来。' };
+    }
+    function getApproxOnlineCount() {
+      if (typeof net.onlineCount === 'number' && net.onlineCount >= 0) return net.onlineCount;
+      const names = new Set();
+      ['single','stage','efficiency'].forEach(key => {
+        (net.boards[key] || []).forEach(item => {
+          const name = item.player_name || item.player_name_snapshot;
+          if (name) names.add(String(name));
+        });
+      });
+      return names.size || null;
+    }
+    function getMotivationLines(insights, onlineCount) {
+      const lines = [];
+      if (insights.singleStanding.rank === 1) {
+        lines.push('你已经顶到单局榜前排，接下来更重要的是把领先优势继续拉开。');
+      } else if (insights.singleStanding.rank && insights.singleStanding.gapToNext > 0) {
+        lines.push(`再追 ${insights.singleStanding.gapToNext} 分，就能把前一名拉下马。`);
+      } else {
+        lines.push('先把这一局稳定打深，分数上去以后冲榜反馈会立刻明显。');
+      }
+      if (typeof onlineCount === 'number' && onlineCount > 1) {
+        lines.push(`当前有 ${onlineCount} 名玩家正在同台竞技，你的每一分都在和真人比拼。`);
+      } else {
+        lines.push('联网后会显示当前同台竞技人数，方便强化实时竞争感。');
+      }
+      return lines;
+    }
+
+    function getGoalInsights(targetRun = run) {
+      const singleRows = getSingleBoardRows();
+      const stageRows = getStageBoardRows();
+      const efficiencyRows = getEfficiencyBoardRows();
+      const score = Number(targetRun.currentRunScore || 0);
+      const stage = Number(targetRun.roundIndex || targetRun.stageLevel || 1);
+      const energySpent = Math.max(1, Number(targetRun.energySpent || 0));
+      const efficiency = score / energySpent;
+      const singleStanding = calculateBoardStanding(score, singleRows, row => row.score);
+      const stageStanding = calculateBoardStanding(stage, stageRows, row => row.highestStage);
+      const efficiencyStanding = calculateBoardStanding(efficiency, efficiencyRows, row => row.efficiency);
+      const bestScore = Math.max(profile.bestRunScore || 0, score);
+      let chaseMain = '先把本局稳定推进，再开始冲更高排名。';
+      let chaseSub = '当前优先关注单局总分榜。';
+      if (singleStanding.rank && singleStanding.rank > 1 && singleStanding.gapToNext > 0) {
+        chaseMain = `单局总分再追 ${singleStanding.gapToNext} 分，就能反超前一名。`;
+        chaseSub = `当前估算位于单局总分榜第 ${singleStanding.rank} 位，适合继续追分。`;
+      } else if (singleStanding.rank === 1) {
+        chaseMain = '你已经站在单局总分榜最前面了，继续冲高把第一名拉开。';
+        chaseSub = '接下来更适合同时追关卡榜和体力性价比。';
+      } else if (stageStanding.rank && stageStanding.rank > 1 && stageStanding.gapToNext > 0) {
+        chaseMain = `再推进 ${stageStanding.gapToNext} 关，就能超过前一位玩家。`;
+        chaseSub = `当前关卡榜估算第 ${stageStanding.rank} 位。`;
+      }
+      const combinedPercentileCandidates = [singleStanding.percentile, stageStanding.percentile].filter(v => typeof v === 'number');
+      const combinedPercentile = combinedPercentileCandidates.length ? Math.max(...combinedPercentileCandidates) : null;
+      const rating = getRatingByPercentile(combinedPercentile || 0, score, stage);
+      const onlineCount = getApproxOnlineCount();
+      const motivationLines = getMotivationLines({ singleStanding, stageStanding, efficiencyStanding, score, stage }, onlineCount);
+      return {
+        score,
+        stage,
+        energySpent,
+        efficiency,
+        bestScore,
+        singleStanding,
+        stageStanding,
+        efficiencyStanding,
+        chaseMain,
+        chaseSub,
+        rating,
+        combinedPercentile,
+        onlineCount,
+        motivationLines,
+      };
+    }
+    function renderGoalPanel(targetRun = run) {
+      const insights = getGoalInsights(targetRun);
+      els.goalBestScore.textContent = insights.bestScore;
+      els.goalBestScoreSub.textContent = insights.bestScore > (profile.bestRunScore || 0)
+        ? '这局已经刷新个人历史最高分。'
+        : `距离刷新个人纪录还差 ${Math.max(0, (profile.bestRunScore || 0) - insights.score)} 分`;
+      els.goalSingleRank.textContent = formatRankLabel(insights.singleStanding.rank, insights.singleStanding.total);
+      els.goalSingleRankSub.textContent = insights.singleStanding.rank
+        ? (insights.singleStanding.rank === 1 ? '你当前已经站在单局总分榜榜首。' : `离上一名还差 ${insights.singleStanding.gapToNext} 分`)
+        : '联网后会显示当前单局总分排名';
+      els.goalStageRank.textContent = formatRankLabel(insights.stageStanding.rank, insights.stageStanding.total);
+      els.goalStageRankSub.textContent = insights.stageStanding.rank
+        ? (insights.stageStanding.rank === 1 ? '你当前已经站在最高关卡榜榜首。' : `离上一名还差 ${insights.stageStanding.gapToNext} 关`)
+        : '联网后会显示当前最高关卡排名';
+      els.goalEfficiency.textContent = insights.efficiency.toFixed(2);
+      els.goalEfficiencySub.textContent = insights.efficiencyStanding.rank
+        ? `平均分榜估算第 ${insights.efficiencyStanding.rank} 位` 
+        : `当前体力性价比 = ${insights.score} ÷ ${insights.energySpent}`;
+      els.goalChaseMain.textContent = insights.chaseMain;
+      els.goalChaseSub.textContent = insights.chaseSub;
+      const onlineCount = typeof insights.onlineCount === 'number' && insights.onlineCount > 0 ? insights.onlineCount : null;
+      const beatPercent = typeof insights.combinedPercentile === 'number' ? insights.combinedPercentile : null;
+      const gapText = insights.singleStanding.rank
+        ? (insights.singleStanding.rank === 1 ? '榜首' : `${insights.singleStanding.gapToNext}分`)
+        : (insights.stageStanding.rank && insights.stageStanding.rank > 1 ? `${insights.stageStanding.gapToNext}关` : '--');
+      const progressValue = Math.max(8, Math.min(100, beatPercent != null ? beatPercent : (insights.singleStanding.rank ? 52 : 18)));
+      let momentumLabel = '待发力';
+      if ((beatPercent || 0) >= 90 || insights.singleStanding.rank === 1) momentumLabel = '统治中';
+      else if ((beatPercent || 0) >= 70) momentumLabel = '冲榜中';
+      else if ((beatPercent || 0) >= 40) momentumLabel = '追击中';
+      els.goalArenaCount.textContent = onlineCount != null ? onlineCount : '--';
+      els.goalArenaPulse.textContent = onlineCount != null ? (onlineCount > 30 ? '高热对局' : onlineCount > 10 ? '实时竞速' : '竞技场集结中') : '联网后显示';
+      els.goalArenaRankChip.innerHTML = `总分榜 <strong>${insights.singleStanding.rank ? '#' + insights.singleStanding.rank : '未上榜'}</strong>`;
+      els.goalArenaBeatChip.innerHTML = `领先 <strong>${beatPercent != null ? beatPercent + '%' : '--'}</strong>`;
+      els.goalArenaGapChip.innerHTML = `追分 <strong>${gapText}</strong>`;
+      els.goalArenaMomentum.textContent = momentumLabel;
+      els.goalArenaProgress.style.width = `${progressValue}%`;
+      els.goalArenaBeatMini.textContent = beatPercent != null ? `${beatPercent}%` : '--%';
+      els.goalArenaChaseMini.textContent = gapText;
+      els.goalArenaTier.textContent = insights.rating.title;
+      const beatText = typeof insights.combinedPercentile === 'number'
+        ? `超越 ${insights.combinedPercentile}% 玩家`
+        : '刷新榜单后显示实时压制率';
+      els.goalFootnote.textContent = `${insights.rating.title} · ${beatText}`;
+    }
+function getLeaderboardPreview(type) {
+      const item = getBoardItems(type)[0];
+      if (!item) {
+        return { value: '--', sub: net.ready ? '暂时还没有可展示的数据。' : '配置 Supabase 后显示真实榜单' };
+      }
+      const name = item.player_name || item.player_name_snapshot || '未命名玩家';
+      if (type === 'single') {
+        return { value: `${item.score ?? 0}`, sub: `${name} · 关卡 ${item.max_stage ?? 1}` };
+      }
+      if (type === 'stage') {
+        return { value: `${item.highest_stage ?? 0}`, sub: `${name} · 最佳单局 ${item.best_single_score ?? 0}` };
+      }
+      return { value: `${Number(item.avg_score_per_energy || 0).toFixed(2)}`, sub: `${name} · 总体力 ${item.total_energy ?? 0}` };
+    }
+    function getLeaderboardPageCount(items) {
+      return Math.max(1, Math.ceil((items || []).length / leaderboardView.pageSize));
+    }
+    function renderLeaderboardPreviewCards() {
+      const single = getLeaderboardPreview('single');
+      const stage = getLeaderboardPreview('stage');
+      const efficiency = getLeaderboardPreview('efficiency');
+      els.singleBoardPreviewValue.textContent = single.value;
+      els.singleBoardPreviewSub.textContent = single.sub;
+      els.stageBoardPreviewValue.textContent = stage.value;
+      els.stageBoardPreviewSub.textContent = stage.sub;
+      els.efficiencyBoardPreviewValue.textContent = efficiency.value;
+      els.efficiencyBoardPreviewSub.textContent = efficiency.sub;
+    }
+    function makeDetailedEmpty(container) {
+      container.innerHTML = '';
+      const empty = document.createElement('div');
+      empty.className = 'leaderboard-empty';
+      empty.textContent = net.ready ? '暂时还没有可展示的数据。' : '联网未启用，配置 Supabase 后会显示更完整的榜单。';
+      container.appendChild(empty);
+    }
+    function renderModalBoardTable(type) {
+      const items = getBoardItems(type);
+      const meta = getLeaderboardMeta(type);
+      const pageCount = getLeaderboardPageCount(items);
+      leaderboardView.page = clamp(leaderboardView.page, 1, pageCount);
+      const start = (leaderboardView.page - 1) * leaderboardView.pageSize;
+      const rows = items.slice(start, start + leaderboardView.pageSize);
+      els.leaderboardModalBoardTitle.textContent = meta.title;
+      els.leaderboardModalBoardSub.textContent = meta.sub;
+      els.leaderboardModalBoardMeta.textContent = `第 ${leaderboardView.page} / ${pageCount} 页 · 共 ${items.length} 条`;
+      els.leaderboardPageInfo.textContent = `第 ${leaderboardView.page} / ${pageCount} 页`;
+      els.leaderboardPrevPageBtn.disabled = leaderboardView.page <= 1;
+      els.leaderboardNextPageBtn.disabled = leaderboardView.page >= pageCount;
+      els.leaderboardTabs.forEach(btn => btn.classList.toggle('active', btn.dataset.boardTab === type));
+      const container = els.leaderboardModalTable;
+      if (!rows.length) {
+        makeDetailedEmpty(container);
+        return;
+      }
+      const header = document.createElement('div');
+      header.className = `board-rich-row header ${type}`;
+      header.innerHTML = meta.headers.map(text => `<div>${escapeHtml(text)}</div>`).join('');
+      container.innerHTML = '';
+      container.appendChild(header);
+      rows.forEach((item, index) => {
+        const rank = start + index + 1;
+        const row = document.createElement('div');
+        row.className = `board-rich-row ${type}`;
+        const name = item.player_name || item.player_name_snapshot || '未命名玩家';
+        if (type === 'single') {
+          row.innerHTML = `
+            <div class="rank-cell">${rank}</div>
+            <div class="player-cell"><div class="name">${escapeHtml(name)}</div><div class="sub">单局总分排行</div></div>
+            <div class="value-cell">${escapeHtml(item.score ?? 0)}</div>
+            <div class="value-cell">${escapeHtml(item.max_stage ?? 1)}</div>
+            <div class="muted-cell">${escapeHtml(formatBoardDate(item.snapshot_at || item.created_at))}${item.source === 'live' ? ' · 实时' : ''}</div>
+          `;
+        } else if (type === 'stage') {
+          row.innerHTML = `
+            <div class="rank-cell">${rank}</div>
+            <div class="player-cell"><div class="name">${escapeHtml(name)}</div><div class="sub">历史冲关深度</div></div>
+            <div class="value-cell">${escapeHtml(item.highest_stage ?? 0)}</div>
+            <div class="value-cell">${escapeHtml(item.best_single_score ?? 0)}</div>
+            <div class="muted-cell">${escapeHtml(item.total_runs_including_live ?? item.total_runs ?? 0)} 局</div>
+          `;
+        } else {
+          row.innerHTML = `
+            <div class="rank-cell">${rank}</div>
+            <div class="player-cell"><div class="name">${escapeHtml(name)}</div><div class="sub">体力性价比</div></div>
+            <div class="value-cell">${escapeHtml(Number(item.avg_score_per_energy || 0).toFixed(2))}</div>
+            <div class="value-cell">${escapeHtml(item.total_score ?? 0)}</div>
+            <div class="value-cell">${escapeHtml(item.total_energy ?? 0)}</div>
+            <div class="muted-cell">${escapeHtml(item.total_runs_including_live ?? item.total_runs ?? 0)} 局</div>
+          `;
+        }
+        container.appendChild(row);
+      });
+    }
+    function renderLeaderboards() {
+      renderLeaderboardPreviewCards();
+      renderModalBoardTable(leaderboardView.activeTab);
+      const statusText = net.syncing ? '正在刷新排行榜...' : net.boardMessage;
+      els.leaderboardStatus.textContent = statusText;
+      els.leaderboardModalMessage.textContent = statusText;
+      els.leaderboardModalStatus.innerHTML = `联网状态：<strong>${escapeHtml(net.ready ? '已连接' : (net.configured ? '初始化失败' : '未配置'))}</strong>${net.liveSupport === 'enabled' ? ' · 实时榜已启用' : (net.liveSupport === 'disabled' && net.ready ? ' · 当前为历史榜' : '')}`;
+      els.leaderboardPlayerName.textContent = net.playerName || '未设置';
+      els.leaderboardRunSummary.textContent = `${run.currentRunScore || 0} / ${run.stageLevel || 1}`;
+      els.leaderboardEfficiencyGate.textContent = `总体力 ≥ ${MIN_EFFICIENCY_TOTAL_ENERGY}`;
+    }
+    function setLeaderboardTab(type) {
+      leaderboardView.activeTab = type;
+      leaderboardView.page = 1;
+      renderLeaderboards();
+    }
+    function changeLeaderboardPage(delta) {
+      const items = getBoardItems(leaderboardView.activeTab);
+      const pageCount = getLeaderboardPageCount(items);
+      leaderboardView.page = clamp(leaderboardView.page + delta, 1, pageCount);
+      renderLeaderboards();
+    }
+    function getRunOnlineSummary(targetRun = run) {
+      return {
+        score: Math.max(0, Math.floor(targetRun.currentRunScore || 0)),
+        maxStage: Math.max(1, Math.floor(targetRun.roundIndex || 1)),
+        energySpent: Math.max(0, Math.floor(targetRun.energySpent || 0)),
+        runSeconds: Math.max(1, Math.floor((Date.now() - (targetRun.startedAtMs || Date.now())) / 1000)),
+      };
+    }
+    function buildLiveRunPayload(targetRun = run) {
+      const summary = getRunOnlineSummary(targetRun);
+      return {
+        player_id: net.playerId,
+        player_name_snapshot: net.playerName || '未命名玩家',
+        score: summary.score,
+        max_stage: summary.maxStage,
+        energy_spent: summary.energySpent,
+        run_seconds: summary.runSeconds,
+        client_version: RUN_VERSION,
+        updated_at: new Date().toISOString(),
+      };
+    }
+    function markLiveRunDirty(force = false) {
+      net.liveDirty = true;
+      if (force) net.lastLiveSyncAt = 0;
+    }
+    async function syncLiveRunSnapshot(force = false, targetRun = run) {
+      if (!net.ready || !supabaseClient || !net.playerId) return false;
+      if (net.liveSupport === 'disabled' && !force) return false;
+      const now = Date.now();
+      if (!force) {
+        if (!net.liveDirty || net.liveSyncing) return false;
+        if (now - net.lastLiveSyncAt < LIVE_SYNC_INTERVAL_MS) return false;
+      }
+      net.liveSyncing = true;
+      try {
+        const payload = buildLiveRunPayload(targetRun);
+        const { error } = await supabaseClient.from('player_live_runs').upsert(payload, { onConflict: 'player_id' });
+        if (error) throw error;
+        net.liveSupport = 'enabled';
+        net.liveDirty = false;
+        net.lastLiveSyncAt = now;
+        if (els.leaderboardModal.style.display === 'flex' || now - net.lastLeaderboardLoadAt > LEADERBOARD_AUTO_REFRESH_MS) {
+          loadLeaderboards();
+        }
+        return true;
+      } catch (err) {
+        console.error(err);
+        if (net.liveSupport !== 'enabled') {
+          net.liveSupport = 'disabled';
+          net.boardMessage = '未检测到实时排行榜补丁 SQL，当前显示历史排行榜。';
+          renderLeaderboards();
+        }
+        return false;
+      } finally {
+        net.liveSyncing = false;
+      }
+    }
+    async function loadLeaderboards() {
+      if (!net.ready || !supabaseClient) {
+        renderLeaderboards();
+        return;
+      }
+      net.syncing = true;
+      net.boardMessage = '正在刷新排行榜...';
+      renderLeaderboards();
+      try {
+        let singleRes;
+        let stageRes;
+        let efficiencyRes;
+        try {
+          let onlineRes;
+          [singleRes, stageRes, efficiencyRes, onlineRes] = await Promise.all([
+            supabaseClient.from('leaderboard_single_run_realtime').select('player_name,score,max_stage,snapshot_at,source').order('score', { ascending: false }).order('snapshot_at', { ascending: true }).limit(LEADERBOARD_LIMIT),
+            supabaseClient.from('leaderboard_player_stats_realtime').select('player_name,highest_stage,best_single_score,total_runs_including_live,total_score,total_energy').order('highest_stage', { ascending: false }).order('best_single_score', { ascending: false }).limit(LEADERBOARD_LIMIT),
+            supabaseClient.from('leaderboard_player_stats_realtime').select('player_name,avg_score_per_energy,total_score,total_energy,total_runs_including_live').gte('total_energy', MIN_EFFICIENCY_TOTAL_ENERGY).order('avg_score_per_energy', { ascending: false }).order('total_score', { ascending: false }).limit(LEADERBOARD_LIMIT),
+            supabaseClient.from('player_live_runs').select('player_id', { count: 'exact', head: true }),
+          ]);
+          if (singleRes.error) throw singleRes.error;
+          if (stageRes.error) throw stageRes.error;
+          if (efficiencyRes.error) throw efficiencyRes.error;
+          net.onlineCount = typeof onlineRes.count === 'number' ? onlineRes.count : null;
+          net.liveSupport = 'enabled';
+          net.boardMessage = '排行榜已刷新（实时进度）。';
+        } catch (realtimeErr) {
+          console.error(realtimeErr);
+          net.liveSupport = 'disabled';
+          [singleRes, stageRes, efficiencyRes] = await Promise.all([
+            supabaseClient.from('game_runs').select('player_name_snapshot,score,max_stage,created_at,id').order('score', { ascending: false }).order('id', { ascending: true }).limit(LEADERBOARD_LIMIT),
+            supabaseClient.from('leaderboard_player_stats').select('player_name,highest_stage,best_single_score,total_runs').order('highest_stage', { ascending: false }).order('best_single_score', { ascending: false }).limit(LEADERBOARD_LIMIT),
+            supabaseClient.from('leaderboard_player_stats').select('player_name,avg_score_per_energy,total_score,total_energy,total_runs').gte('total_energy', MIN_EFFICIENCY_TOTAL_ENERGY).order('avg_score_per_energy', { ascending: false }).order('total_score', { ascending: false }).limit(LEADERBOARD_LIMIT),
+          ]);
+          if (singleRes.error) throw singleRes.error;
+          if (stageRes.error) throw stageRes.error;
+          if (efficiencyRes.error) throw efficiencyRes.error;
+          net.onlineCount = null;
+          net.boardMessage = '排行榜已刷新（历史榜）。如需局内实时进度，请执行实时补丁 SQL。';
+        }
+        net.boards.single = singleRes.data || [];
+        net.boards.stage = stageRes.data || [];
+        net.boards.efficiency = efficiencyRes.data || [];
+        net.lastLeaderboardLoadAt = Date.now();
+      } catch (err) {
+        console.error(err);
+        net.boardMessage = '读取排行榜失败，请确认 SQL 已执行且 RLS 已配置。';
+      } finally {
+        net.syncing = false;
+        renderLeaderboards();
+      }
+    }
+    function openLeaderboardModal(type = leaderboardView.activeTab) {
+      leaderboardView.activeTab = type;
+      leaderboardView.page = 1;
+      els.leaderboardModal.style.display = 'flex';
+      const scrollBox = els.leaderboardModal.querySelector('.leaderboard-scroll');
+      if (scrollBox) scrollBox.scrollTop = 0;
+      renderLeaderboards();
+      if (net.ready) loadLeaderboards();
+    }
+    function closeLeaderboardModal() {
+      els.leaderboardModal.style.display = 'none';
+    }
+
+
+    async function ensurePlayerIdentity(name) {
+      const playerName = String(name || '').trim();
+      if (playerName.length < 2 || playerName.length > 20) throw new Error('玩家名称需要 2~20 个字符');
+      const localData = { playerName, playerId: net.playerId || null };
+      saveStoredPlayer(localData);
+      net.playerName = playerName;
+      if (!net.ready || !supabaseClient) return { playerId: null, playerName };
+      const payload = { device_id: getDeviceId(), player_name: playerName };
+      const { data, error } = await supabaseClient.from('players').upsert(payload, { onConflict: 'device_id' }).select('id, player_name').single();
+      if (error) throw error;
+      net.playerId = data.id;
+      net.playerName = data.player_name;
+      saveStoredPlayer({ playerName: data.player_name, playerId: data.id });
+      if (screen === 'game') {
+        markLiveRunDirty(true);
+        syncLiveRunSnapshot(true);
+      }
+      return { playerId: data.id, playerName: data.player_name };
+    }
+    async function submitRunOnline(summary) {
+      if (!net.ready || !supabaseClient || !net.playerId) return;
+      if (net.submitting) return;
+      net.submitting = true;
+      try {
+        const payload = {
+          player_id: net.playerId,
+          player_name_snapshot: net.playerName || '未命名玩家',
+          score: Math.max(0, Math.floor(summary.score || 0)),
+          max_stage: Math.max(1, Math.floor(summary.maxStage || 1)),
+          energy_spent: Math.max(1, Math.floor(summary.energySpent || 1)),
+          run_seconds: Math.max(1, Math.floor(summary.runSeconds || 1)),
+          client_version: RUN_VERSION,
+        };
+        const { error } = await supabaseClient.from('game_runs').insert(payload);
+        if (error) throw error;
+        net.boardMessage = '成绩已上传，排行榜已刷新。';
+        await loadLeaderboards();
+      } catch (err) {
+        console.error(err);
+        net.boardMessage = '成绩上传失败，请检查 players/game_runs 表和 RLS。';
+        renderLeaderboards();
+      } finally {
+        net.submitting = false;
+      }
+    }
+    async function finalizeRunOnline(summary) {
+      if (!net.ready || !supabaseClient || !net.playerId) return submitRunOnline(summary);
+      if (net.liveSupport !== 'disabled') {
+        const synced = await syncLiveRunSnapshot(true, run);
+        if (synced) {
+          try {
+            const { error } = await supabaseClient.rpc('finalize_live_run', { p_player_id: net.playerId });
+            if (error) throw error;
+            net.liveDirty = false;
+            net.boardMessage = '成绩已结算，排行榜已同步到实时榜。';
+            await loadLeaderboards();
+            return;
+          } catch (err) {
+            console.error(err);
+          }
+        }
+      }
+      await submitRunOnline(summary);
+    }
+    function openPlayerModal(prefill = '') {
+      const value = prefill || net.playerName || loadStoredPlayerName() || '';
+      els.playerNameInput.value = value;
+      els.playerModalHint.textContent = net.ready ? '将自动同步到 Supabase 并参与在线排行榜。' : '当前未配置 Supabase，也可以先离线体验。';
+      els.playerModal.style.display = 'flex';
+      setTimeout(() => els.playerNameInput.focus(), 20);
+    }
+    function closePlayerModal() { els.playerModal.style.display = 'none'; }
+    async function confirmPlayerAndStart() {
+      const name = els.playerNameInput.value.trim();
+      if (name.length < 2 || name.length > 20) {
+        els.playerModalHint.textContent = '名称长度需要 2~20 个字符。';
+        return;
+      }
+      els.playerStartBtn.disabled = true;
+      els.playerStartBtn.textContent = net.ready ? '同步中...' : '开始中...';
+      try {
+        await ensurePlayerIdentity(name);
+        closePlayerModal();
+        beginRun();
+        saveCurrentSession(true);
+        render();
+        if (net.ready) loadLeaderboards();
+      } catch (err) {
+        console.error(err);
+        els.playerModalHint.textContent = `创建玩家失败：${err.message || '请检查 Supabase 配置'}`;
+      } finally {
+        els.playerStartBtn.disabled = false;
+        els.playerStartBtn.textContent = '确认并开始';
+      }
+    }
+    async function handleStartEntry() {
+      const savedPlayer = loadStoredPlayerProfile();
+      if (!net.playerName && savedPlayer.playerName) {
+        net.playerName = savedPlayer.playerName;
+        net.playerId = savedPlayer.playerId || null;
+      }
+      if (!net.playerName) {
+        openPlayerModal();
+        return;
+      }
+      if (net.ready && !net.playerId) {
+        try {
+          await ensurePlayerIdentity(net.playerName);
+        } catch (err) {
+          console.error(err);
+        }
+      }
+      if (restoreSavedSession()) {
+        markLiveRunDirty(true);
+        if (net.ready) syncLiveRunSnapshot(true);
+        render();
+        if (net.ready) loadLeaderboards();
+        return;
+      }
+      beginRun();
+      saveCurrentSession(true);
+      markLiveRunDirty(true);
+      syncLiveRunSnapshot(true);
+      render();
+      if (net.ready) loadLeaderboards();
+    }
+
+    function spawnBall({ x, y, vx, vy, damage, generated = false, delay = 0, radius = BALL_RADIUS }) {
+      return { id: uid('ball'), x, y, prevX: x, prevY: y, vx, vy, damage, generated, launched: delay <= 0, delay, radius, ttl: null, age: 0, idleAge: 0, progressAge: 0, cellKey: '', lastBrickId: null, collisionGrace: 0 };
+    }
+    function makeBrick(type, col, row, hp, shape = 1) {
+      return { id: uid('brick'), type, col, row, hp, maxHp: hp, shape, shield: type === 'shield', invisible: type === 'stealth', flash: 0 };
+    }
+    function makeObject(type, col, row, extra = {}) {
+      return { id: uid('obj'), type, col, row, activated: false, plusHits: 0, blackholeArmed: false, blackholeLeft: 0, pulse: 0, temp: false, ...extra };
+    }
+
+    function getHardChanceByEnergySpent(energySpent) {
+      if (energySpent < HARD_UNLOCK_ENERGY_SPENT) return 0;
+      const progress = clamp(
+        (energySpent - HARD_UNLOCK_ENERGY_SPENT) / Math.max(1, HARD_CHANCE_FULL_ENERGY_SPENT - HARD_UNLOCK_ENERGY_SPENT),
+        0,
+        1
+      );
+      return HARD_CHANCE_MIN + (HARD_CHANCE_MAX - HARD_CHANCE_MIN) * progress;
+    }
+    function getProjectedTemplateTier(targetRun) {
+      return getHardChanceByEnergySpent(targetRun.energySpent || 0) >= 0.5 ? 'hard' : 'easy';
+    }
+    function chooseTemplateTier(targetRun) {
+      const hardChance = getHardChanceByEnergySpent(targetRun.energySpent || 0);
+      return Math.random() < hardChance ? 'hard' : 'easy';
+    }
+    function chooseTemplate(targetRun, tier) {
+      const tierPool = TEMPLATE_POOL.filter(template => template.tier === tier);
+      const candidates = tierPool.filter(template => template.id !== targetRun.lastTemplateId);
+      return pick(candidates.length ? candidates : tierPool.length ? tierPool : TEMPLATE_POOL);
+    }
+    function instantiateTemplateRow(template, rowIndex, tier, stageBand) {
+      const hpScale = tier === 'easy'
+        ? EASY_HP_BASE + stageBand * EASY_HP_STEP
+        : HARD_HP_BASE + stageBand * HARD_HP_STEP;
+      const bricks = [];
+      const objects = [];
+      const rowItems = template.rows[rowIndex] || [];
+      for (const item of rowItems) {
+        if (item.kind === 'brick') {
+          const hp = Math.max(1, Math.round(item.hp * hpScale));
+          bricks.push(makeBrick(item.type, item.col, 0, hp, item.shape || 1));
+        } else if (item.kind === 'object') {
+          objects.push(makeObject(item.type, item.col, 0));
+        }
+      }
+      if (tier === 'hard') {
+        const occupiedCols = new Set([...bricks.map(brick => brick.col), ...objects.map(obj => obj.col)]);
+        const freeCols = Array.from({ length: COLS }, (_, idx) => idx).filter(col => !occupiedCols.has(col));
+        const currentPressure = bricks.length + objects.length * 0.5;
+        if (freeCols.length && currentPressure < 3.5) {
+          const extraCol = pick(freeCols);
+          const extraShape = Math.random() < 0.55 ? 1 : pick([2, 3, 4, 5]);
+          const extraHp = Math.max(2, Math.round((7 + stageBand * 2) * hpScale));
+          bricks.push(makeBrick('normal', extraCol, 0, extraHp, extraShape));
+        }
+      }
+      return { bricks, objects };
+    }
+    function enqueueTemplate(targetRun) {
+      const tier = chooseTemplateTier(targetRun);
+      const template = chooseTemplate(targetRun, tier);
+      targetRun.templateSpawnCount += 1;
+      const stageBand = Math.floor((targetRun.templateSpawnCount - 1) / 4);
+      for (let rowIndex = 0; rowIndex < TEMPLATE_HEIGHT; rowIndex += 1) {
+        targetRun.templateRowQueue.push(instantiateTemplateRow(template, rowIndex, tier, stageBand));
+      }
+      targetRun.templateLineup.push({
+        id: template.id,
+        name: template.name,
+        tier,
+        stageBand,
+        rowsLeft: TEMPLATE_HEIGHT,
+      });
+      targetRun.lastTemplateId = template.id;
+    }
+    function ensureRowQueue(targetRun, neededRows = ROWS) {
+      while (targetRun.templateRowQueue.length < neededRows) enqueueTemplate(targetRun);
+    }
+    function consumeQueuedRow(targetRun) {
+      ensureRowQueue(targetRun, 1);
+      const rowData = targetRun.templateRowQueue.shift();
+      if (targetRun.templateLineup.length) {
+        targetRun.templateLineup[0].rowsLeft -= 1;
+        if (targetRun.templateLineup[0].rowsLeft <= 0) targetRun.templateLineup.shift();
+      }
+      return rowData;
+    }
+    function countBrickLayers(targetRun) {
+      const aliveBricks = targetRun.bricks.filter(brick => !brick.dead);
+      if (!aliveBricks.length) return 0;
+      return Math.max(...aliveBricks.map(brick => brick.row)) + 1;
+    }
+    function getReplenishProgress(targetRun) {
+      const energySpent = Math.max(0, targetRun.energySpent || 0);
+      return clamp(energySpent / Math.max(1, REPLENISH_TARGET_FULL_ENERGY_SPENT), 0, 1);
+    }
+    function getDynamicReplenishTriggerLayers(targetRun) {
+      const progress = getReplenishProgress(targetRun);
+      return Math.round(MIN_REPLENISH_TRIGGER_LAYERS + (MAX_REPLENISH_TRIGGER_LAYERS - MIN_REPLENISH_TRIGGER_LAYERS) * progress);
+    }
+    function getDynamicFillTargetLayers(targetRun) {
+      const progress = getReplenishProgress(targetRun);
+      return Math.round(BASE_REPLENISH_TARGET_LAYERS + (MAX_REPLENISH_TARGET_LAYERS - BASE_REPLENISH_TARGET_LAYERS) * progress);
+    }
+    function cloneTemplateQueueState(targetRun) {
+      return {
+        templateRowQueue: (targetRun.templateRowQueue || []).map(row => ({
+          bricks: (row.bricks || []).map(brick => ({ ...brick })),
+          objects: (row.objects || []).map(obj => ({ ...obj })),
+        })),
+        templateLineup: (targetRun.templateLineup || []).map(item => ({ ...item })),
+        templateSpawnCount: targetRun.templateSpawnCount || 0,
+        lastTemplateId: targetRun.lastTemplateId || null,
+        energySpent: targetRun.energySpent || 0,
+      };
+    }
+    function consumeQueuedRowFromState(queueState) {
+      ensureRowQueue(queueState, 1);
+      const rowData = queueState.templateRowQueue.shift();
+      if (queueState.templateLineup.length) {
+        queueState.templateLineup[0].rowsLeft -= 1;
+        if (queueState.templateLineup[0].rowsLeft <= 0) queueState.templateLineup.shift();
+      }
+      return {
+        bricks: (rowData.bricks || []).map(brick => ({ ...brick })),
+        objects: (rowData.objects || []).map(obj => ({ ...obj })),
+      };
+    }
+    function consumePlayableBrickRowFromState(queueState) {
+      let mergedObjects = [];
+      let guard = 0;
+      while (guard < TEMPLATE_HEIGHT * 4) {
+        guard += 1;
+        const rowData = consumeQueuedRowFromState(queueState);
+        mergedObjects = mergedObjects.concat((rowData.objects || []).map(obj => ({ ...obj })));
+        if ((rowData.bricks || []).length > 0) {
+          return {
+            bricks: (rowData.bricks || []).map(brick => ({ ...brick })),
+            objects: mergedObjects,
+          };
+        }
+      }
+      return { bricks: [], objects: mergedObjects };
+    }
+    function consumePlayableBrickRow(targetRun) {
+      let mergedObjects = [];
+      let guard = 0;
+      while (guard < TEMPLATE_HEIGHT * 4) {
+        guard += 1;
+        ensureRowQueue(targetRun, 1);
+        const rowData = consumeQueuedRow(targetRun);
+        mergedObjects = mergedObjects.concat((rowData.objects || []).map(obj => ({ ...obj })));
+        if ((rowData.bricks || []).length > 0) {
+          return {
+            bricks: (rowData.bricks || []).map(brick => ({ ...brick })),
+            objects: mergedObjects,
+          };
+        }
+      }
+      return { bricks: [], objects: mergedObjects };
+    }
+    function applySingleReplenishStep(targetRun, rowData) {
+      targetRun.bricks.forEach(brick => {
+        brick.row += 1;
+      });
+      targetRun.objects.forEach(obj => {
+        obj.row += 1;
+        obj.pulse = 0;
+      });
+      targetRun.objects = targetRun.objects.filter(obj => obj.row < ROWS);
+      if (targetRun.bricks.some(brick => brick.row >= ROWS)) {
+        return { overflow: true, targetLayers: countBrickLayers(targetRun) };
+      }
+      (rowData.bricks || []).forEach(brick => targetRun.bricks.push({ ...brick, row: 0 }));
+      (rowData.objects || []).forEach(obj => targetRun.objects.push({ ...obj, row: 0 }));
+      return { overflow: false, targetLayers: countBrickLayers(targetRun) };
+    }
+    function planAdvanceSteps(targetRun, desiredStepCount, { triggerLayers = null, desiredTargetLayers = null, logMode = 'normal' } = {}) {
+      const safeStepCount = Math.max(0, Math.floor(desiredStepCount || 0));
+      const queueState = cloneTemplateQueueState(targetRun);
+      if (safeStepCount <= 0) {
+        return {
+          steps: [],
+          targetLayers: countBrickLayers(targetRun),
+          overflow: false,
+          triggerLayers,
+          desiredTargetLayers,
+          queueStateAfter: queueState,
+          logMode,
+        };
+      }
+      let projectedRows = targetRun.bricks.filter(brick => !brick.dead).map(brick => brick.row);
+      const steps = [];
+      let overflow = false;
+      let guard = 0;
+      while (steps.length < safeStepCount && guard < 60) {
+        guard += 1;
+        const rowData = consumePlayableBrickRowFromState(queueState);
+        if (!(rowData.bricks || []).length) break;
+        projectedRows = projectedRows.map(row => row + 1);
+        if (projectedRows.some(row => row >= ROWS)) {
+          overflow = true;
+          break;
+        }
+        steps.push(rowData);
+        projectedRows.push(0);
+      }
+      return {
+        steps,
+        targetLayers: new Set(projectedRows).size,
+        overflow,
+        triggerLayers,
+        desiredTargetLayers,
+        queueStateAfter: queueState,
+        logMode,
+      };
+    }
+    function planReplenishAnimation(targetRun) {
+      const currentLayers = countBrickLayers(targetRun);
+      const triggerLayers = getDynamicReplenishTriggerLayers(targetRun);
+      const desiredTargetLayers = getDynamicFillTargetLayers(targetRun);
+      if (currentLayers > triggerLayers || currentLayers >= desiredTargetLayers) {
+        return {
+          steps: [],
+          targetLayers: currentLayers,
+          overflow: false,
+          triggerLayers,
+          desiredTargetLayers,
+          queueStateAfter: cloneTemplateQueueState(targetRun),
+          logMode: 'replenish',
+        };
+      }
+      const neededRows = Math.max(0, desiredTargetLayers - currentLayers);
+      return planAdvanceSteps(targetRun, neededRows, { triggerLayers, desiredTargetLayers, logMode: 'replenish' });
+    }
+    function queueAdvanceAnimation(targetRun, plan, currentLayersForLog) {
+      if (plan.overflow) {
+        return { addedRows: 0, targetLayers: plan.targetLayers, pushed: false, overflow: true, triggerLayers: plan.triggerLayers, desiredTargetLayers: plan.desiredTargetLayers };
+      }
+      if (!plan.steps.length) {
+        return { addedRows: 0, targetLayers: plan.targetLayers, pushed: false, overflow: false, triggerLayers: plan.triggerLayers, desiredTargetLayers: plan.desiredTargetLayers };
+      }
+      targetRun.pendingReplenishRows = plan.steps.map(step => ({
+        bricks: step.bricks.map(brick => ({ ...brick })),
+        objects: step.objects.map(obj => ({ ...obj })),
+      }));
+      targetRun.templateRowQueue = plan.queueStateAfter.templateRowQueue;
+      targetRun.templateLineup = plan.queueStateAfter.templateLineup;
+      targetRun.templateSpawnCount = plan.queueStateAfter.templateSpawnCount;
+      targetRun.lastTemplateId = plan.queueStateAfter.lastTemplateId;
+      targetRun.replenishAnimTimer = 0;
+      targetRun.pendingText = '补层推进中';
+      if (plan.logMode === 'replenish') {
+        addLog(targetRun, `当前砖块最深层数 ${currentLayersForLog} 层 ≤ 触发线 ${plan.triggerLayers} 层，已触发补层机制：直接判定补到 ${plan.targetLayers} 层砖块，并逐层播放推进动画`);
+      } else {
+        addLog(targetRun, '未触发补层机制：本回合仅固定推进 1 层砖块');
+      }
+      return { addedRows: plan.steps.length, targetLayers: plan.targetLayers, pushed: true, overflow: false, triggerLayers: plan.triggerLayers, desiredTargetLayers: plan.desiredTargetLayers };
+    }
+    function replenishSparseRows(targetRun) {
+      const plan = planReplenishAnimation(targetRun);
+      return queueAdvanceAnimation(targetRun, plan, countBrickLayers(targetRun));
+    }
+    function buildInitialField(targetRun) {
+
+      const bricks = [];
+      const objects = [];
+      ensureRowQueue(targetRun, INITIAL_FILLED_ROWS);
+      for (let row = 0; row < INITIAL_FILLED_ROWS; row += 1) {
+        const rowData = consumeQueuedRow(targetRun);
+        rowData.bricks.forEach(brick => bricks.push({ ...brick, row }));
+        rowData.objects.forEach(obj => objects.push({ ...obj, row }));
+      }
+      ensureRowQueue(targetRun, TEMPLATE_HEIGHT);
+      return { bricks, objects };
+    }
+
+    function createRun() {
+      const launcherCol = 3;
+      const baseRun = {
+        status: 'ready', committed: false, currentRunScore: 0, energy: START_ENERGY, maxEnergy: START_MAX_ENERGY,
+        ballCount: INITIAL_BALL_COUNT, ballDamage: 1, roundIndex: 1, stageLevel: 1, stageProgress: 0, stageNeed: nextStageNeed(1),
+        launcherCol, launcherX: cellCenter(launcherCol, ROWS - 1).x,
+        aimPoint: { x: BOARD_W / 2, y: BOARD_H - 120 }, isDragging: false, activeBalls: [],
+        bricks: [], objects: [],
+        logs: ['拖拽瞄准并松手发射。', '开局底部固定预留 6 行安全区。', '每次消耗体力后，先判断当前砖块最深层数是否 ≤ 当前触发线 X；若满足，则直接触发补层并一次性判定补到目标层数 Y；若不满足，则只固定补 1 层，两者互斥，不会同回合叠加。'],
+        pendingText: '可发射', roundInProgress: false, mode: null, hoverCell: null,
+        items: { split3: 2, blast: 2, clear: 1 },
+        baffle: { unlocked: false, level: 0, widthCells: 0, ttl: 0, x: chooseRandomBaffleX(DEFAULT_BAFFLE_WIDTH_CELLS) },
+        shake: 0, bounceGlow: 0, finalSummary: null, effects: [],
+        shotStartBalls: 0, fastForward: false, shotElapsed: 0, speedMultiplier: 1,
+        shotId: 0, lastResolvedShotId: 0, shieldBreakShotId: null,
+        roundShieldBreakOnly: false, shieldBreakLogged: false,
+        templateRowQueue: [], templateLineup: [], templateSpawnCount: 0, lastTemplateId: null,
+        energySpent: 0, startedAtMs: Date.now(),
+        pendingReplenishRows: [], replenishAnimTimer: 0,
+      };
+      const initial = buildInitialField(baseRun);
+      baseRun.bricks = initial.bricks;
+      baseRun.objects = initial.objects;
+      return baseRun;
+    }
+
+    function cloneRun(src) {
+      return {
+        ...src,
+        aimPoint: { ...src.aimPoint },
+        activeBalls: src.activeBalls.map(b => ({ ...b })),
+        bricks: src.bricks.map(b => ({ ...b })),
+        objects: src.objects.map(o => ({ ...o })),
+        logs: [...src.logs], items: { ...src.items }, baffle: { ...src.baffle },
+        finalSummary: src.finalSummary ? { ...src.finalSummary } : null, effects: src.effects.map(fx => ({ ...fx })),
+        pendingReplenishRows: Array.isArray(src.pendingReplenishRows) ? src.pendingReplenishRows.map(row => ({ ...row, bricks: Array.isArray(row.bricks) ? row.bricks.map(brick => ({ ...brick })) : [], objects: Array.isArray(row.objects) ? row.objects.map(obj => ({ ...obj })) : [] })) : [],
+        replenishAnimTimer: Number.isFinite(src.replenishAnimTimer) ? src.replenishAnimTimer : 0,
+      };
+    }
+
+    function addLog(targetRun, text) { targetRun.logs = [text, ...targetRun.logs].slice(0, 6); }
+    function brickUnitScore(targetRun) { return Math.floor(BASE_SCORE * (1 + (targetRun.stageLevel - 1) * 0.05)); }
+    function awardDestroyed(targetRun, count) {
+      let gained = 0;
+      for (let i = 0; i < count; i += 1) {
+        gained += brickUnitScore(targetRun);
+        targetRun.stageProgress += 1;
+        if (targetRun.stageProgress >= targetRun.stageNeed) {
+          targetRun.stageProgress -= targetRun.stageNeed;
+          targetRun.stageLevel += 1;
+          targetRun.stageNeed = nextStageNeed(targetRun.stageLevel);
+          addLog(targetRun, `星图等级提升到 Lv.${targetRun.stageLevel}`);
+        }
+      }
+      targetRun.currentRunScore += gained;
+      if (count > 0) { targetRun.shake = Math.min(16, targetRun.shake + count * 2); markLiveRunDirty(); }
+    }
+    function findBrick(targetRun, col, row) { return targetRun.bricks.find(b => b.col === col && b.row === row); }
+    function findObject(targetRun, col, row) { return targetRun.objects.find(o => o.col === col && o.row === row); }
+    function brickBounds(brick) { return { x: brick.col * CELL, y: brick.row * CELL, w: CELL, h: CELL }; }
+    function isTriangleBrick(brick) { return brick.type === 'normal' && brick.shape && brick.shape !== 1; }
+    function getBrickPolygon(brick, inset = 0) {
+      if (!isTriangleBrick(brick)) return null;
+      const { x, y, w, h } = brickBounds(brick);
+      const x1 = x + inset, y1 = y + inset, x2 = x + w - inset, y2 = y + h - inset;
+      if (brick.shape === 2) return [{ x: x1, y: y2 }, { x: x1, y: y1 }, { x: x2, y: y2 }];
+      if (brick.shape === 3) return [{ x: x1, y: y2 }, { x: x2, y: y2 }, { x: x2, y: y1 }];
+      if (brick.shape === 4) return [{ x: x1, y: y1 }, { x: x1, y: y2 }, { x: x2, y: y1 }];
+      if (brick.shape === 5) return [{ x: x1, y: y1 }, { x: x2, y: y1 }, { x: x2, y: y2 }];
+      return null;
+    }
+    function pointInTriangle(p, a, b, c) {
+      const area = (p1, p2, p3) => (p1.x * (p2.y - p3.y) + p2.x * (p3.y - p1.y) + p3.x * (p1.y - p2.y)) / 2;
+      const full = Math.abs(area(a, b, c));
+      const a1 = Math.abs(area(p, b, c));
+      const a2 = Math.abs(area(a, p, c));
+      const a3 = Math.abs(area(a, b, p));
+      return Math.abs(full - (a1 + a2 + a3)) <= 0.2;
+    }
+    function pointInBrick(brick, x, y) {
+      if (!brick) return false;
+      if (brick.type === 'stealth' && brick.invisible) return false;
+      const { x: bx, y: by, w, h } = brickBounds(brick);
+      if (x < bx || x > bx + w || y < by || y > by + h) return false;
+      const poly = getBrickPolygon(brick);
+      return poly ? pointInTriangle({ x, y }, poly[0], poly[1], poly[2]) : true;
+    }
+    function circleIntersectsBrick(brick, x, y, radius = BALL_RADIUS) {
+      if (!brick || brick.dead) return false;
+      if (brick.type === 'stealth' && brick.invisible) return false;
+      const { x: bx, y: by, w, h } = brickBounds(brick);
+      if (x < bx - radius || x > bx + w + radius || y < by - radius || y > by + h + radius) return false;
+      if (pointInBrick(brick, x, y)) return true;
+      for (const segment of getBrickSegments(brick, 0)) {
+        if (pointToSegmentDistance(x, y, segment.a, segment.b) <= radius + 0.35) return true;
+      }
+      const poly = getBrickPolygon(brick);
+      if (poly) {
+        for (const p of poly) {
+          if (Math.hypot(x - p.x, y - p.y) <= radius + 0.35) return true;
+        }
+      }
+      return false;
+    }
+    function getBrickSegments(brick, inset = 0) {
+      const poly = getBrickPolygon(brick, inset);
+      if (poly) {
+        return [
+          { a: poly[0], b: poly[1] },
+          { a: poly[1], b: poly[2] },
+          { a: poly[2], b: poly[0] },
+        ];
+      }
+      const { x, y, w, h } = brickBounds(brick);
+      const x1 = x + inset, y1 = y + inset, x2 = x + w - inset, y2 = y + h - inset;
+      return [
+        { a: { x: x1, y: y1 }, b: { x: x2, y: y1 } },
+        { a: { x: x2, y: y1 }, b: { x: x2, y: y2 } },
+        { a: { x: x2, y: y2 }, b: { x: x1, y: y2 } },
+        { a: { x: x1, y: y2 }, b: { x: x1, y: y1 } },
+      ];
+    }
+    function cross(ax, ay, bx, by) { return ax * by - ay * bx; }
+    function segmentIntersection(p1, p2, p3, p4) {
+      const rx = p2.x - p1.x, ry = p2.y - p1.y;
+      const sx = p4.x - p3.x, sy = p4.y - p3.y;
+      const rxs = cross(rx, ry, sx, sy);
+      if (Math.abs(rxs) < 1e-9) return null;
+      const qpx = p3.x - p1.x, qpy = p3.y - p1.y;
+      const t = cross(qpx, qpy, sx, sy) / rxs;
+      const u = cross(qpx, qpy, rx, ry) / rxs;
+      if (t >= -1e-6 && t <= 1 + 1e-6 && u >= -1e-6 && u <= 1 + 1e-6) {
+        return { t, u, x: p1.x + t * rx, y: p1.y + t * ry };
+      }
+      return null;
+    }
+    function pointToSegmentDistance(px, py, a, b) {
+      const abx = b.x - a.x, aby = b.y - a.y;
+      const denom = abx * abx + aby * aby || 1;
+      let t = ((px - a.x) * abx + (py - a.y) * aby) / denom;
+      t = clamp(t, 0, 1);
+      const cx = a.x + abx * t, cy = a.y + aby * t;
+      return Math.hypot(px - cx, py - cy);
+    }
+    function getCollisionNormal(ball, brick) {
+      const segments = getBrickSegments(brick, 0);
+      let bestPoint = null;
+      let bestDist = Infinity;
+      let bestToward = -Infinity;
+      for (const segment of segments) {
+        const abx = segment.b.x - segment.a.x, aby = segment.b.y - segment.a.y;
+        const denom = abx * abx + aby * aby || 1;
+        let t = ((ball.x - segment.a.x) * abx + (ball.y - segment.a.y) * aby) / denom;
+        t = clamp(t, 0, 1);
+        const cx = segment.a.x + abx * t, cy = segment.a.y + aby * t;
+        const dx = ball.x - cx, dy = ball.y - cy;
+        const dist = Math.hypot(dx, dy);
+        const toward = -((ball.vx * dx) + (ball.vy * dy)) / (((Math.hypot(ball.vx, ball.vy) || 1) * (dist || 1)));
+        if (dist < bestDist - 0.05 || (Math.abs(dist - bestDist) <= 0.05 && toward > bestToward)) {
+          bestDist = dist;
+          bestPoint = { x: cx, y: cy };
+          bestToward = toward;
+        }
+      }
+      if (!bestPoint) {
+        const vlen = Math.hypot(ball.vx, ball.vy) || 1;
+        return { nx: -ball.vx / vlen, ny: -ball.vy / vlen, distance: 0, point: { x: ball.x, y: ball.y } };
+      }
+      let nx = ball.x - bestPoint.x;
+      let ny = ball.y - bestPoint.y;
+      let nlen = Math.hypot(nx, ny);
+      if (nlen < 1e-6) {
+        const vlen = Math.hypot(ball.vx, ball.vy) || 1;
+        nx = -ball.vx / vlen;
+        ny = -ball.vy / vlen;
+        nlen = 1;
+      }
+      nx /= nlen;
+      ny /= nlen;
+      return { nx, ny, distance: bestDist, point: bestPoint };
+    }
+    function reflectBallAgainstBrick(ball, brick) {
+      const normal = getCollisionNormal(ball, brick);
+      const dot = ball.vx * normal.nx + ball.vy * normal.ny;
+      ball.vx = ball.vx - 2 * dot * normal.nx;
+      ball.vy = ball.vy - 2 * dot * normal.ny;
+      ball.x += normal.nx * POST_BOUNCE_PUSH;
+      ball.y += normal.ny * POST_BOUNCE_PUSH;
+    }
+    function pushBallOutsideBrick(ball, brick) {
+      let guard = 0;
+      while (circleIntersectsBrick(brick, ball.x, ball.y, ball.radius) && guard < 10) {
+        const normal = getCollisionNormal(ball, brick);
+        const push = Math.max(1.2, (ball.radius - normal.distance) + 1.0);
+        ball.x += normal.nx * push;
+        ball.y += normal.ny * push;
+        guard += 1;
+      }
+    }
+    function findCollidingBrick(targetRun, x, y, radius = BALL_RADIUS, movingBall = null) {
+      let best = null;
+      let bestDist = Infinity;
+      let bestFacing = -Infinity;
+      const speed = movingBall ? Math.hypot(movingBall.vx, movingBall.vy) || 1 : 1;
+      for (const brick of targetRun.bricks) {
+        if (!circleIntersectsBrick(brick, x, y, radius)) continue;
+        let dist = Infinity;
+        let facing = -Infinity;
+        for (const segment of getBrickSegments(brick, 0)) {
+          const segDist = pointToSegmentDistance(x, y, segment.a, segment.b);
+          if (segDist < dist) dist = segDist;
+          if (movingBall) {
+            const ex = segment.b.x - segment.a.x, ey = segment.b.y - segment.a.y;
+            const len = Math.hypot(ex, ey) || 1;
+            const nx = -ey / len, ny = ex / len;
+            const toward = Math.abs((movingBall.vx * nx + movingBall.vy * ny) / speed);
+            if (toward > facing) facing = toward;
+          }
+        }
+        if (dist < bestDist - 0.15 || (Math.abs(dist - bestDist) <= 0.15 && facing > bestFacing)) {
+          best = brick;
+          bestDist = dist;
+          bestFacing = facing;
+        }
+      }
+      return best;
+    }
+    function findFirstBrickHitOnSegment(targetRun, startPoint, endPoint) {
+      let best = null;
+      for (const brick of targetRun.bricks) {
+        if (brick.dead || (brick.type === 'stealth' && brick.invisible)) continue;
+        for (const segment of getBrickSegments(brick, 0)) {
+          const hit = segmentIntersection(startPoint, endPoint, segment.a, segment.b);
+          if (!hit || hit.t <= PREVIEW_EPS) continue;
+          if (!best || hit.t < best.t) best = { t: hit.t, point: { x: hit.x, y: hit.y }, brick };
+        }
+      }
+      return best;
+    }
+    function tracePreviewRay(targetRun, startX, startY, dirX, dirY) {
+      const leftWall = BALL_RADIUS;
+      const rightWall = BOARD_W - BALL_RADIUS;
+      const topWall = BALL_RADIUS;
+      const stepSize = PREVIEW_TRACE_STEP;
+      const wallStepPadding = 0.08;
+      const maxDistance = BOARD_W * 6;
+      let traveled = 0;
+      let x = startX;
+      let y = startY;
+      while (traveled < maxDistance) {
+        const remaining = maxDistance - traveled;
+        const step = Math.min(stepSize, remaining);
+        let nextX = x + dirX * step;
+        let nextY = y + dirY * step;
+        let wallHit = null;
+        if (nextX <= leftWall) {
+          const ratio = (leftWall - x) / ((nextX - x) || 1);
+          nextX = leftWall;
+          nextY = y + (nextY - y) * clamp(ratio, 0, 1);
+          wallHit = 'left';
+        } else if (nextX >= rightWall) {
+          const ratio = (rightWall - x) / ((nextX - x) || 1);
+          nextX = rightWall;
+          nextY = y + (nextY - y) * clamp(ratio, 0, 1);
+          wallHit = 'right';
+        } else if (nextY <= topWall) {
+          const ratio = (topWall - y) / ((nextY - y) || 1);
+          nextY = topWall;
+          nextX = x + (nextX - x) * clamp(ratio, 0, 1);
+          wallHit = 'top';
+        }
+        const brick = findCollidingBrick(targetRun, nextX, nextY, BALL_RADIUS, { x: nextX, y: nextY, vx: dirX, vy: dirY });
+        if (brick) {
+          return { type: 'brick', x: nextX, y: nextY, brick };
+        }
+        x = nextX;
+        y = nextY;
+        traveled += step;
+        if (wallHit) {
+          if (wallHit === 'left' || wallHit === 'right') {
+            dirX *= -1;
+            x = clamp(x + dirX * wallStepPadding, leftWall, rightWall);
+          } else {
+            dirY *= -1;
+            y = topWall + wallStepPadding;
+          }
+          return { type: 'wall', wall: wallHit, x, y, dirX, dirY };
+        }
+      }
+      return { type: 'end', x, y, dirX, dirY };
+    }
+    function clearDeadBricks(targetRun) {
+      const deadCount = targetRun.bricks.filter(b => b.dead).length;
+      if (deadCount > 0) awardDestroyed(targetRun, deadCount);
+      targetRun.bricks = targetRun.bricks.filter(b => !b.dead);
+      return deadCount;
+    }
+    function healRandomBrick(targetRun, amount, excludeId) {
+      const candidates = targetRun.bricks.filter(b => b.id !== excludeId && b.hp < b.maxHp && !b.dead);
+      if (!candidates.length) return;
+      const target = pick(candidates);
+      target.hp = Math.min(target.maxHp, target.hp + amount);
+      target.flash = 8;
+    }
+    function damageBrick(targetRun, brick, amount, { bounceBall = true } = {}) {
+      if (!brick || brick.dead) return { destroyed: false, bounce: false, passthrough: false };
+      if (brick.type === 'stealth' && brick.invisible) return { destroyed: false, bounce: false, passthrough: true };
+      if (brick.type === 'symMain' && targetRun.bricks.some(b => b.type === 'symSub' && !b.dead)) {
+        brick.flash = 8; return { destroyed: false, bounce: true, passthrough: false };
+      }
+      const currentShotId = targetRun.shotId || 0;
+      if (brick.type === 'shield' && brick.shield) {
+        brick.shield = false;
+        brick.flash = 8;
+        brick.shieldBrokenShotId = currentShotId;
+        addLog(targetRun, '格挡生效：该砖块本回合只破盾，不掉本体血；其他砖块仍正常受伤。');
+        return { destroyed: false, bounce: true, passthrough: false, shieldBreak: true };
+      }
+      if (brick.type === 'shield' && brick.shieldBrokenShotId === currentShotId) {
+        brick.flash = Math.max(brick.flash, 6);
+        return { destroyed: false, bounce: bounceBall, passthrough: false, blockedByShield: true };
+      }
+      brick.hp -= amount; brick.flash = 8;
+      if (brick.type === 'heal') healRandomBrick(targetRun, amount * 2, brick.id);
+      if (brick.hp <= 0) { brick.dead = true; return { destroyed: true, bounce: false, passthrough: false }; }
+      return { destroyed: false, bounce: bounceBall, passthrough: false };
+    }
+    function rotate(vx, vy, angle) { return { vx: vx * Math.cos(angle) - vy * Math.sin(angle), vy: vx * Math.sin(angle) + vy * Math.cos(angle) }; }
+    function lightningDamage(ball) {
+      return Math.max(LIGHTNING_MIN_DAMAGE, Math.ceil(ball.damage * LIGHTNING_DAMAGE_MULT));
+    }
+    function addLightningEffect(targetRun, axis, index) {
+      const effect = axis === 'row'
+        ? { id: uid('fx'), axis, ttl: LIGHTNING_EFFECT_TTL, x1: 0, y1: index * CELL + CELL / 2, x2: BOARD_W, y2: index * CELL + CELL / 2 }
+        : { id: uid('fx'), axis, ttl: LIGHTNING_EFFECT_TTL, x1: index * CELL + CELL / 2, y1: 0, x2: index * CELL + CELL / 2, y2: BOARD_H };
+      targetRun.effects.push(effect);
+    }
+    function strikeLine(targetRun, type, index, amount) {
+      addLightningEffect(targetRun, type, index);
+      const affected = targetRun.bricks.filter(b => type === 'row' ? b.row === index : b.col === index);
+      affected.forEach(brick => {
+        if (brick.type === 'stealth' && brick.invisible) return;
+        const result = damageBrick(targetRun, brick, amount, { bounceBall: false });
+        if (result && !result.passthrough) brick.flash = Math.max(brick.flash, 12);
+      });
+      return clearDeadBricks(targetRun);
+    }
+    function activateObject(targetRun, obj, ball) {
+      if ((obj.type === 'lightRow' || obj.type === 'lightCol' || obj.type === 'lightCross') && obj.activated) return { progress: false };
+      obj.activated = true; obj.pulse = 8;
+      if (obj.type === 'plus') { if (!ball.generated) obj.plusHits += 1; return { progress: false }; }
+      if (obj.type === 'big') { if (!ball.generated) ball.radius = Math.min(ball.radius * 1.35, 18); return { progress: false }; }
+      if (obj.type === 'split2') {
+        if (!ball.generated) targetRun.activeBalls.push(spawnBall({ x: ball.x, y: ball.y, vx: ball.vx, vy: ball.vy, damage: ball.damage, generated: true, radius: ball.radius }));
+        return { progress: false };
+      }
+      if (obj.type === 'split3') {
+        if (!ball.generated) {
+          const a = rotate(ball.vx, ball.vy, 0.52), b = rotate(ball.vx, ball.vy, -0.52);
+          targetRun.activeBalls.push(
+            spawnBall({ x: ball.x, y: ball.y, vx: a.vx, vy: a.vy, damage: ball.damage, generated: true, radius: ball.radius }),
+            spawnBall({ x: ball.x, y: ball.y, vx: b.vx, vy: b.vy, damage: ball.damage, generated: true, radius: ball.radius })
+          );
+        }
+        return { progress: false };
+      }
+      if (obj.type === 'blackhole') {
+        if (!obj.blackholeArmed) { obj.blackholeArmed = true; obj.blackholeLeft = 3; return { progress: false }; }
+        ball.dead = true; obj.blackholeLeft -= 1; if (obj.blackholeLeft <= 0) { obj.blackholeArmed = false; obj.blackholeLeft = 0; }
+        return { progress: false };
+      }
+      const dmg = lightningDamage(ball);
+      if (obj.type === 'lightRow') { const destroyed = strikeLine(targetRun, 'row', obj.row, dmg); addLog(targetRun, `横闪触发：对第 ${obj.row + 1} 行造成 ${dmg} 点伤害`); return { progress: destroyed > 0 }; }
+      if (obj.type === 'lightCol') { const destroyed = strikeLine(targetRun, 'col', obj.col, dmg); addLog(targetRun, `纵闪触发：对第 ${obj.col + 1} 列造成 ${dmg} 点伤害`); return { progress: destroyed > 0 }; }
+      if (obj.type === 'lightCross') {
+        const destroyedRow = strikeLine(targetRun, 'row', obj.row, dmg);
+        const destroyedCol = strikeLine(targetRun, 'col', obj.col, dmg);
+        addLog(targetRun, `十字闪电触发：对第 ${obj.row + 1} 行与第 ${obj.col + 1} 列造成 ${dmg} 点伤害`);
+        return { progress: (destroyedRow + destroyedCol) > 0 };
+      }
+      if (ball.generated) return { progress: false };
+      return { progress: false };
+    }
+    function finishRound(targetRun) {
+      const currentShotId = Number.isFinite(targetRun.shotId) ? targetRun.shotId : 0;
+      if (currentShotId > 0 && Number.isFinite(targetRun.lastResolvedShotId) && targetRun.lastResolvedShotId === currentShotId) {
+        return targetRun;
+      }
+      targetRun.lastResolvedShotId = currentShotId;
+      targetRun.roundInProgress = false; targetRun.activeBalls = [];
+      targetRun.fastForward = false;
+      targetRun.shotStartBalls = 0;
+      targetRun.shotElapsed = 0;
+      targetRun.speedMultiplier = 1;
+      targetRun.roundShieldBreakOnly = false;
+      targetRun.shieldBreakLogged = false;
+      targetRun.shieldBreakShotId = null;
+      let gainedBalls = 0;
+      targetRun.objects.forEach(obj => { if (obj.type === 'plus' && obj.plusHits > 0) gainedBalls += Math.min(3, 1 + Math.floor((obj.plusHits - 1) / 4)); });
+      if (gainedBalls > 0) { targetRun.ballCount = Math.min(MAX_BALLS, targetRun.ballCount + gainedBalls); addLog(targetRun, `本回合额外获得 ${gainedBalls} 颗库存球`); }
+      targetRun.objects = targetRun.objects.filter(obj => !(obj.activated || obj.temp));
+      targetRun.bricks.forEach(brick => { if (brick.type === 'stealth') brick.invisible = !brick.invisible; brick.flash = 0; });
+
+      const currentLayersBeforeAdvance = countBrickLayers(targetRun);
+      const replenishTriggerLayers = getDynamicReplenishTriggerLayers(targetRun);
+      const shouldReplenishInsteadOfAdvance = currentLayersBeforeAdvance <= replenishTriggerLayers;
+
+      if (shouldReplenishInsteadOfAdvance) {
+        const refillResult = replenishSparseRows(targetRun);
+        if (refillResult.overflow) {
+          targetRun.status = 'gameover';
+          targetRun.finalSummary = { score: targetRun.currentRunScore, level: targetRun.stageLevel, rounds: targetRun.roundIndex };
+          addLog(targetRun, '补层推进时砖块进入终点线，本局结束。');
+          return targetRun;
+        }
+        if (refillResult.addedRows > 0) {
+          addLog(targetRun, `本回合已触发补层机制（当前最深层数 ${currentLayersBeforeAdvance} 层 ≤ 触发线 ${replenishTriggerLayers} 层），因此不再额外补普通的 1 层推进`);
+        }
+      } else {
+        const normalAdvancePlan = planAdvanceSteps(targetRun, 1, { logMode: 'normal' });
+        const advanceResult = queueAdvanceAnimation(targetRun, normalAdvancePlan, currentLayersBeforeAdvance);
+        if (advanceResult.overflow) {
+          targetRun.status = 'gameover';
+          targetRun.finalSummary = { score: targetRun.currentRunScore, level: targetRun.stageLevel, rounds: targetRun.roundIndex };
+          addLog(targetRun, '普通推进时砖块进入终点线，本局结束。');
+          return targetRun;
+        }
+      }
+
+      ensureRowQueue(targetRun, TEMPLATE_HEIGHT);
+      const oldCol = targetRun.launcherCol;
+      const possible = [...Array(COLS).keys()].filter(n => n !== oldCol);
+      targetRun.launcherCol = pick(possible);
+      targetRun.launcherX = cellCenter(targetRun.launcherCol, ROWS - 1).x;
+      if (targetRun.baffle.unlocked) targetRun.baffle.x = chooseRandomBaffleX(targetRun.baffle.widthCells || DEFAULT_BAFFLE_WIDTH_CELLS);
+      targetRun.roundIndex += 1;
+      if (!isAnimatingReplenish(targetRun)) {
+        targetRun.pendingText = '可发射';
+      }
+      if (!targetRun.baffle.unlocked && targetRun.ballCount * targetRun.ballDamage >= 15) addLog(targetRun, '挡板已可激活。右侧按钮可以直接体验。');
+      markLiveRunDirty();
+      return targetRun;
+    }
+    function getAimVector(targetRun) {
+      const dx = targetRun.aimPoint.x - targetRun.launcherX;
+      const dy = targetRun.aimPoint.y - LAUNCH_ORIGIN_Y;
+      const len = Math.hypot(dx, dy) || 1;
+      return { x: dx / len, y: dy / len };
+    }
+    function getTimeAccelerationMultiplier(elapsedSeconds) {
+      if (elapsedSeconds <= TIME_ACCEL_START_SECONDS) return 1;
+      const progress = clamp((elapsedSeconds - TIME_ACCEL_START_SECONDS) / TIME_ACCEL_RAMP_SECONDS, 0, 1);
+      return 1 + progress * (TIME_ACCEL_MAX_MULTIPLIER - 1);
+    }
+    function isAnimatingReplenish(targetRun) {
+      return Array.isArray(targetRun.pendingReplenishRows) && targetRun.pendingReplenishRows.length > 0;
+    }
+    function simulateFrame(sourceRun, dt) {
+      if (sourceRun.status === 'gameover') return sourceRun;
+      const replenishing = isAnimatingReplenish(sourceRun);
+      const hasTransientVisuals = (sourceRun.shake || 0) > 0.05 || (sourceRun.bounceGlow || 0) > 0.05 || (Array.isArray(sourceRun.effects) && sourceRun.effects.length > 0);
+      if (!sourceRun.roundInProgress && !replenishing && !hasTransientVisuals) return sourceRun;
+      const next = cloneRun(sourceRun);
+      next.shake *= 0.72;
+      next.bounceGlow *= 0.82;
+      next.effects = next.effects.map(fx => ({ ...fx, ttl: fx.ttl - 1 })).filter(fx => fx.ttl > 0);
+      if (next.shake < 0.05) next.shake = 0;
+      if (next.bounceGlow < 0.05) next.bounceGlow = 0;
+      if (replenishing && !next.roundInProgress) {
+        next.replenishAnimTimer = (next.replenishAnimTimer || 0) + dt;
+        while (next.replenishAnimTimer >= REPLENISH_ANIMATION_INTERVAL && next.pendingReplenishRows.length > 0) {
+          next.replenishAnimTimer -= REPLENISH_ANIMATION_INTERVAL;
+          const stepRow = next.pendingReplenishRows.shift();
+          const stepResult = applySingleReplenishStep(next, stepRow);
+          if (stepResult.overflow) {
+            next.pendingReplenishRows = [];
+            next.status = 'gameover';
+            next.finalSummary = { score: next.currentRunScore, level: next.stageLevel, rounds: next.roundIndex };
+            addLog(next, '补层推进时砖块进入终点线，本局结束。');
+            markLiveRunDirty();
+            return next;
+          }
+          next.shake = Math.max(next.shake, 3.2);
+        }
+        if (!next.pendingReplenishRows.length) {
+          next.replenishAnimTimer = 0;
+          next.pendingText = '可发射';
+          next.shake = 0;
+          markLiveRunDirty();
+        }
+        return next;
+      }
+      next.shotElapsed = (sourceRun.shotElapsed || 0) + dt;
+      const fastForwardThreshold = Math.max(1, Math.ceil((sourceRun.shotStartBalls || 0) * FAST_FORWARD_THRESHOLD));
+      const lowBallFastForward = !!(sourceRun.shotStartBalls > 0 && sourceRun.activeBalls.length < fastForwardThreshold);
+      const timeAccelerationMultiplier = getTimeAccelerationMultiplier(next.shotElapsed);
+      next.speedMultiplier = Math.max(lowBallFastForward ? FAST_FORWARD_MULTIPLIER : 1, timeAccelerationMultiplier);
+      next.fastForward = next.speedMultiplier > 1.001;
+      const simDt = dt * next.speedMultiplier;
+      next.shake *= 0.86;
+      next.bounceGlow *= 0.82;
+      next.bricks.forEach(b => { b.flash = Math.max(0, b.flash - 1); });
+      next.objects.forEach(o => { o.pulse = Math.max(0, o.pulse - 1); });
+      const paddleY = BOARD_H - 8;
+      const paddleHalf = (next.baffle.widthCells * CELL) / 2;
+      const paddleX = next.baffle.x ?? next.launcherX;
+      for (const ball of next.activeBalls) {
+        if (ball.dead) continue;
+        if (!ball.launched) { ball.delay -= simDt; if (ball.delay <= 0) ball.launched = true; continue; }
+        ball.age = (Number.isFinite(ball.age) ? ball.age : 0) + simDt;
+        ball.idleAge = (Number.isFinite(ball.idleAge) ? ball.idleAge : 0) + simDt;
+        ball.progressAge = (Number.isFinite(ball.progressAge) ? ball.progressAge : 0) + simDt;
+        if (ball.age >= MAX_BALL_LIFETIME && ball.progressAge >= BALL_TIMEOUT_IDLE_GRACE) { ball.dead = true; continue; }
+        if (ball.ttl !== null) { ball.ttl -= simDt; if (ball.ttl <= 0) { ball.dead = true; continue; } }
+        const accel = 1 + Math.floor((next.roundIndex - 1) / 6) * 0.15;
+        const moveX = ball.vx * simDt * accel;
+        const moveY = ball.vy * simDt * accel;
+        const steps = Math.max(1, Math.ceil(Math.max(Math.abs(moveX), Math.abs(moveY)) / MAX_SIM_STEP));
+        const stepX = moveX / steps;
+        const stepY = moveY / steps;
+        for (let step = 0; step < steps; step += 1) {
+          if (ball.dead) break;
+          ball.prevX = ball.x;
+          ball.prevY = ball.y;
+          ball.x += stepX;
+          ball.y += stepY;
+          if (ball.x - ball.radius <= 0) { ball.x = ball.radius + 1; ball.vx = Math.abs(ball.vx); next.bounceGlow = 1; break; }
+          if (ball.x + ball.radius >= BOARD_W) { ball.x = BOARD_W - ball.radius - 1; ball.vx = -Math.abs(ball.vx); next.bounceGlow = 1; break; }
+          if (ball.y - ball.radius <= 0) { ball.y = ball.radius + 1; ball.vy = Math.abs(ball.vy); next.bounceGlow = 1; break; }
+          if (next.baffle.unlocked && ball.vy > 0 && ball.y + ball.radius >= paddleY && ball.prevY + ball.radius < paddleY && ball.x >= paddleX - paddleHalf && ball.x <= paddleX + paddleHalf) {
+            const offset = (ball.x - paddleX) / Math.max(1, paddleHalf);
+            ball.vy = -Math.abs(ball.vy);
+            ball.vx += offset * 90;
+            ball.ttl = next.baffle.ttl;
+            next.bounceGlow = 1;
+            break;
+          }
+          if (ball.y - ball.radius > BOARD_H + 56) { ball.dead = true; break; }
+          if (ball.x < -ball.radius || ball.x > BOARD_W + ball.radius || ball.y < -ball.radius || ball.y > BOARD_H + ball.radius) {
+            ball.cellKey = '';
+            ball.lastBrickId = null;
+            continue;
+          }
+          const col = clamp(Math.floor(ball.x / CELL), 0, COLS - 1);
+          const row = clamp(Math.floor(ball.y / CELL), 0, ROWS - 1);
+          const cellKey = `${col},${row}`;
+          const obj = findObject(next, col, row);
+          if (obj && ball.cellKey !== cellKey && !ball.dead) {
+            const activation = activateObject(next, obj, ball);
+            if (activation && activation.progress) ball.progressAge = 0;
+            ball.idleAge = 0;
+          }
+          if (ball.dead) break;
+          if (ball.collisionGrace > 0) {
+            const graceBrick = findCollidingBrick(next, ball.x, ball.y, ball.radius, ball);
+            if (graceBrick) pushBallOutsideBrick(ball, graceBrick);
+            ball.collisionGrace -= 1;
+            ball.cellKey = cellKey;
+            continue;
+          }
+          const swept = findFirstBrickHitOnSegment(next, { x: ball.prevX, y: ball.prevY }, { x: ball.x, y: ball.y });
+          let brick = swept ? swept.brick : findCollidingBrick(next, ball.x, ball.y, ball.radius, ball);
+          if (swept) {
+            ball.x = swept.point.x;
+            ball.y = swept.point.y;
+          }
+          if (brick) {
+            if (ball.lastBrickId !== brick.id) {
+              const result = damageBrick(next, brick, ball.damage, { bounceBall: true });
+              ball.idleAge = 0;
+              const destroyedCount = clearDeadBricks(next);
+              if ((result && result.destroyed) || destroyedCount > 0) ball.progressAge = 0;
+              if (!result.passthrough && result.bounce) {
+                reflectBallAgainstBrick(ball, brick);
+                pushBallOutsideBrick(ball, brick);
+                ball.collisionGrace = COLLISION_GRACE_STEPS;
+                next.bounceGlow = 1;
+              }
+              ball.lastBrickId = brick.id;
+              break;
+            }
+          } else {
+            ball.lastBrickId = null;
+          }
+          ball.cellKey = cellKey;
+        }
+      }
+      next.activeBalls = next.activeBalls.filter(b => !b.dead);
+      if (next.activeBalls.length === 0) return finishRound(next);
+      return next;
+    }
+    function shotPreviewPoints(targetRun) {
+      const dir = getAimVector(targetRun);
+      if (dir.y > -MIN_SHOT_UPWARD) return [];
+      const pts = [{ x: targetRun.launcherX, y: LAUNCH_ORIGIN_Y }];
+      let x = targetRun.launcherX;
+      let y = LAUNCH_ORIGIN_Y;
+      let dirX = dir.x;
+      let dirY = dir.y;
+      for (let i = 0; i < PREVIEW_MAX_STEPS; i += 1) {
+        const trace = tracePreviewRay(targetRun, x, y, dirX, dirY);
+        if (!trace) break;
+        pts.push({ x: trace.x, y: trace.y });
+        if (trace.type === 'brick' || trace.type === 'end') break;
+        x = trace.x;
+        y = trace.y;
+        dirX = trace.dirX;
+        dirY = trace.dirY;
+      }
+      return pts;
+    }
+
+    function beginRun() {
+      run = createRun();
+      screen = 'game';
+      els.homeScreen.classList.add('hidden');
+      els.gameScreen.classList.remove('hidden');
+      hideGameOver();
+      hideEnergyModal();
+      saveCurrentSession(true);
+      markLiveRunDirty(true);
+      syncLiveRunSnapshot(true);
+      render();
+    }
+    function backHome() {
+      screen = 'home';
+      els.gameScreen.classList.add('hidden');
+      els.homeScreen.classList.remove('hidden');
+      hideGameOver();
+      hideEnergyModal();
+      saveCurrentSession(true);
+      render();
+    }
+    function commitGameOverIfNeeded() {
+      if (screen !== 'game') return;
+      if (run.status !== 'gameover' || run.committed) return;
+      profile = {
+        cumulativeScore: profile.cumulativeScore + run.currentRunScore,
+        bestRunScore: Math.max(profile.bestRunScore, run.currentRunScore),
+        totalRuns: profile.totalRuns + 1,
+      };
+      run.committed = true;
+      saveProfile();
+      clearSavedSession();
+      clearSavedProgress();
+      showGameOver();
+      finalizeRunOnline({
+        score: run.currentRunScore,
+        maxStage: run.roundIndex,
+        energySpent: Math.max(1, run.energySpent || 1),
+        runSeconds: Math.max(1, Math.round((Date.now() - (run.startedAtMs || Date.now())) / 1000)),
+      });
+    }
+    function resetProfile() {
+      profile = { cumulativeScore: 0, bestRunScore: 0, totalRuns: 0 };
+      saveProfile();
+      clearSavedSession();
+      render();
+    }
+    function showGameOver() {
+      const insights = getGoalInsights(run);
+      els.finalScore.textContent = run.finalSummary ? run.finalSummary.score : run.currentRunScore;
+      els.finalLevel.textContent = `Lv.${run.finalSummary ? run.finalSummary.level : run.stageLevel}`;
+      els.finalRounds.textContent = run.finalSummary ? run.finalSummary.rounds : run.roundIndex;
+      els.finalRating.textContent = insights.rating.title;
+      els.finalRatingSub.textContent = insights.rating.sub;
+      els.finalBeatPercent.textContent = typeof insights.combinedPercentile === 'number' ? `${insights.combinedPercentile}%` : '--';
+      els.finalBeatPercentSub.textContent = typeof insights.combinedPercentile === 'number'
+        ? `按当前已加载榜单估算，你这局已经超过约 ${insights.combinedPercentile}% 的玩家。`
+        : '联网并刷新排行榜后，这里会显示你战胜了多少玩家。';
+      els.finalSingleRank.textContent = formatRankLabel(insights.singleStanding.rank, insights.singleStanding.total);
+      els.finalSingleRankSub.textContent = insights.singleStanding.rank
+        ? (insights.singleStanding.rank === 1 ? '单局总分榜榜首，继续冲高扩大领先。' : `离单局总分榜上一名还差 ${insights.singleStanding.gapToNext} 分`)
+        : '当前未读取到单局总分榜';
+      els.finalStageRank.textContent = formatRankLabel(insights.stageStanding.rank, insights.stageStanding.total);
+      els.finalStageRankSub.textContent = insights.stageStanding.rank
+        ? (insights.stageStanding.rank === 1 ? '最高关卡榜榜首，继续推进刷新上限。' : `离最高关卡榜上一名还差 ${insights.stageStanding.gapToNext} 关`)
+        : '当前未读取到最高关卡榜';
+      const goalTip = insights.singleStanding.rank && insights.singleStanding.rank > 1
+        ? `下一局的最直接目标：先把单局总分再追 ${insights.singleStanding.gapToNext} 分，争取先反超前一名。`
+        : (insights.stageStanding.rank && insights.stageStanding.rank > 1
+          ? `下一局可以以关卡推进为目标，再多打 ${insights.stageStanding.gapToNext} 关就有机会抬一档排名。`
+          : '你已经很接近榜单前排了，下一局继续拉高分数和关卡，上榜反馈会更强。');
+      els.finalGoalTip.textContent = goalTip;
+      els.finalArenaTip.textContent = typeof insights.onlineCount === 'number' && insights.onlineCount > 1
+        ? `当前有 ${insights.onlineCount} 名玩家同台竞技，你这局已经把不少对手压在身后，下一局继续把排名往上顶。`
+        : '竞技场的对手会持续加入，保持节奏，下一局更容易打出冲榜反馈。';
+      els.gameOverModal.style.display = 'flex';
+    }
+    function hideGameOver() { els.gameOverModal.style.display = 'none'; }
+    function showEnergyModal() { energyModalOpen = true; els.energyModal.style.display = 'flex'; }
+    function hideEnergyModal() { energyModalOpen = false; els.energyModal.style.display = 'none'; }
+
+    function useSplit3Item() {
+      if (run.roundInProgress || isAnimatingReplenish(run) || run.items.split3 <= 0 || run.status === 'gameover') return;
+      run.mode = run.mode === 'placeSplit3' ? null : 'placeSplit3';
+      render();
+    }
+    function useBlastItem() {
+      if (run.roundInProgress || isAnimatingReplenish(run) || run.items.blast <= 0 || run.status === 'gameover') return;
+      run.mode = run.mode === 'blastSelect' ? null : 'blastSelect';
+      render();
+    }
+    function useClearItem() {
+      if (run.roundInProgress || isAnimatingReplenish(run) || run.items.clear <= 0 || run.status === 'gameover') return;
+      const next = cloneRun(run);
+      const rows = [...new Set(next.bricks.map(b => b.row))].sort((a, b) => b - a).slice(0, 3);
+      next.bricks.forEach(brick => { if (rows.includes(brick.row)) brick.dead = true; });
+      clearDeadBricks(next); next.items.clear -= 1; addLog(next, `清屏道具清除了靠近终点的 ${rows.length} 行`);
+      run = next; markLiveRunDirty(true); render();
+    }
+    function activateOrUpgradeBaffle() {
+      if (run.roundInProgress || isAnimatingReplenish(run) || run.status === 'gameover') return;
+      const next = cloneRun(run);
+      if (!next.baffle.unlocked) {
+        const cost = getBaffleBallCost(1);
+        if (next.ballCount * next.ballDamage < 15 || next.ballCount < cost) return;
+        next.ballCount -= cost;
+        next.baffle = { unlocked: true, level: 1, widthCells: DEFAULT_BAFFLE_WIDTH_CELLS, ttl: 4.2, x: chooseRandomBaffleX(DEFAULT_BAFFLE_WIDTH_CELLS) };
+        addLog(next, `挡板已激活：消耗 ${cost} 颗球，位置随机生成。`);
+        run = next; render(); return;
+      }
+      if (next.baffle.level >= 3) return;
+      const nextLevel = next.baffle.level + 1;
+      const cost = getBaffleBallCost(nextLevel);
+      if (next.ballCount < cost) return;
+      next.ballCount -= cost;
+      next.baffle.level = nextLevel;
+      next.baffle.widthCells += 0.7;
+      next.baffle.ttl += 1;
+      next.baffle.x = clamp(next.baffle.x ?? chooseRandomBaffleX(next.baffle.widthCells), (next.baffle.widthCells * CELL) / 2 + 4, BOARD_W - (next.baffle.widthCells * CELL) / 2 - 4);
+      addLog(next, `挡板升到 Lv.${next.baffle.level}：消耗 ${cost} 颗球，长度和存活时间提升`);
+      run = next; render();
+    }
+    function addEnergy(amount, mode = 'add', fromModal = false) {
+      if (run.roundInProgress || isAnimatingReplenish(run) || run.status === 'gameover') return;
+      const next = cloneRun(run);
+      const before = next.energy;
+      if (mode === 'fill') next.energy = Math.max(next.energy, next.maxEnergy);
+      else next.energy += amount;
+      if (next.energy !== before) {
+        addLog(next, mode === 'fill' ? `体力已回满到 ${next.maxEnergy}` : `手动增加 ${amount} 点体力，当前 ${next.energy}`);
+      }
+      run = next;
+      if (fromModal && run.energy > 0) hideEnergyModal();
+      render();
+    }
+
+    function boardPoint(e) {
+      const rect = els.board.getBoundingClientRect();
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: clamp(clientX - rect.left, 0, BOARD_W), y: clamp(clientY - rect.top, 0, LAUNCH_Y) };
+    }
+    function updateAim(pt) {
+      if (run.status === 'gameover') return;
+      run.aimPoint = { x: pt.x, y: Math.min(pt.y, AIM_MAX_Y) };
+      render();
+    }
+    function shoot() {
+      if (run.roundInProgress || isAnimatingReplenish(run) || run.status === 'gameover') return;
+      if (run.energy <= 0) {
+        run.pendingText = '体力不足';
+        addLog(run, '体力不足，无法发射。已弹出快速补体弹窗。');
+        showEnergyModal();
+        render();
+        return;
+      }
+      const dir = getAimVector(run);
+      if (dir.y > -MIN_SHOT_UPWARD) return;
+      const next = cloneRun(run);
+      next.energy -= 1; next.energySpent += 1; next.roundInProgress = true; next.pendingText = '发射中'; next.mode = null; next.isDragging = false; next.activeBalls = [];
+      next.shotStartBalls = next.ballCount;
+      next.fastForward = false;
+      next.shotElapsed = 0;
+      next.speedMultiplier = 1;
+      next.shotId = (next.shotId || 0) + 1;
+      next.roundShieldBreakOnly = false;
+      next.shieldBreakLogged = false;
+      next.shieldBreakShotId = null;
+      for (let i = 0; i < next.ballCount; i += 1) {
+        next.activeBalls.push(spawnBall({ x: next.launcherX, y: LAUNCH_ORIGIN_Y, vx: dir.x * BALL_SPEED, vy: dir.y * BALL_SPEED, damage: next.ballDamage, generated: false, delay: i * 0.03, radius: BALL_RADIUS }));
+      }
+      addLog(next, `发射 ${next.ballCount} 颗圆球，单球伤害 ${next.ballDamage}`);
+      run = next; render();
+    }
+
+    function handlePointerDown(e) {
+      if (screen !== 'game') return;
+      e.preventDefault();
+      const pt = boardPoint(e);
+      if (run.mode === 'placeSplit3') {
+        const col = clamp(Math.floor(pt.x / CELL), 0, COLS - 1), row = clamp(Math.floor(pt.y / CELL), 0, ROWS - 1);
+        if (run.roundInProgress || isAnimatingReplenish(run) || run.items.split3 <= 0) return;
+        if (findBrick(run, col, row) || findObject(run, col, row)) return;
+        const next = cloneRun(run);
+        next.objects.push(makeObject('split3', col, row, { temp: true })); next.items.split3 -= 1; next.mode = null;
+        addLog(next, `已在 ${col + 1}列-${row + 1}行 放置临时 1变3 元素`); run = next; render(); return;
+      }
+      if (run.mode === 'blastSelect') {
+        const col = clamp(Math.floor(pt.x / CELL), 0, COLS - 1), row = clamp(Math.floor(pt.y / CELL), 0, ROWS - 1);
+        if (run.roundInProgress || isAnimatingReplenish(run) || run.items.blast <= 0) return;
+        const brick = findBrick(run, col, row); if (!brick) return;
+        const next = cloneRun(run); const target = findBrick(next, col, row);
+        damageBrick(next, target, next.ballDamage * 4, { bounceBall: false }); clearDeadBricks(next); next.items.blast -= 1; next.mode = null;
+        addLog(next, `伤害道具命中：造成 ${next.ballDamage * 4} 点伤害`); run = next; render(); return;
+      }
+      if (run.roundInProgress || isAnimatingReplenish(run) || run.status === 'gameover') return;
+      run.isDragging = true; updateAim(pt);
+    }
+    function handlePointerMove(e) {
+      if (screen !== 'game') return;
+      const pt = boardPoint(e);
+      if (run.mode) run.hoverCell = { col: clamp(Math.floor(pt.x / CELL), 0, COLS - 1), row: clamp(Math.floor(pt.y / CELL), 0, ROWS - 1) };
+      if (!run.isDragging) { render(); return; }
+      updateAim(pt);
+    }
+    function handlePointerUp() {
+      if (!run.isDragging) return;
+      run.isDragging = false;
+      shoot();
+    }
+
+    function drawRoundedRect(ctx, x, y, w, h, r) {
+      const rr = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + rr, y);
+      ctx.arcTo(x + w, y, x + w, y + h, rr);
+      ctx.arcTo(x + w, y + h, x, y + h, rr);
+      ctx.arcTo(x, y + h, x, y, rr);
+      ctx.arcTo(x, y, x + w, y, rr);
+      ctx.closePath();
+    }
+    function gradientFill(x, y, w, h, c1, c2) {
+      const g = ctx.createLinearGradient(x, y, x + w, y + h);
+      g.addColorStop(0, c1); g.addColorStop(1, c2); return g;
+    }
+
+    function renderBoard() {
+      ctx.clearRect(0, 0, els.board.width, els.board.height);
+      const shakeX = (Math.random() - 0.5) * run.shake;
+      ctx.save();
+      ctx.translate(shakeX, 0);
+
+      const danger = run.bricks.some(brick => brick.row >= ROWS - 3);
+      if (danger) {
+        const dg = ctx.createLinearGradient(0, BOARD_H * 0.55, 0, BOARD_H);
+        dg.addColorStop(0, 'rgba(0,0,0,0)');
+        dg.addColorStop(0.45, 'rgba(251,113,133,0.08)');
+        dg.addColorStop(1, 'rgba(251,113,133,0.18)');
+        ctx.fillStyle = dg; ctx.fillRect(0, 0, BOARD_W, BOARD_H);
+      }
+
+      for (let i = 0; i <= ROWS; i += 1) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(0, i * CELL + .5); ctx.lineTo(BOARD_W, i * CELL + .5); ctx.stroke();
+      }
+      for (let i = 0; i <= COLS; i += 1) {
+        ctx.beginPath(); ctx.moveTo(i * CELL + .5, 0); ctx.lineTo(i * CELL + .5, BOARD_H); ctx.stroke();
+      }
+
+      ctx.strokeStyle = 'rgba(251,113,133,0.75)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, BOARD_H + .5); ctx.lineTo(BOARD_W, BOARD_H + .5); ctx.stroke();
+
+      if (run.isDragging && !run.roundInProgress) {
+        const pts = shotPreviewPoints(run);
+        if (pts.length > 1) {
+          ctx.save();
+          ctx.setLineDash([7, 6]); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,0.82)';
+          ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+          for (let i = 1; i < pts.length; i += 1) ctx.lineTo(pts[i].x, pts[i].y);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      for (const obj of run.objects) {
+        const meta = objectMeta[obj.type];
+        const x = obj.col * CELL + 6, y = obj.row * CELL + 6, w = CELL - 12, h = CELL - 12;
+        ctx.save();
+        ctx.globalAlpha = obj.type === 'blackhole' && !obj.blackholeArmed ? 0.85 : 1;
+        drawRoundedRect(ctx, x, y, w, h, 999);
+        ctx.fillStyle = gradientFill(x, y, w, h, meta.colors[0], meta.colors[1]); ctx.fill();
+        ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(255,255,255,0.22)'; ctx.stroke();
+        if (obj.pulse > 0) {
+          ctx.shadowBlur = 22; ctx.shadowColor = 'rgba(255,255,255,0.28)';
+          drawRoundedRect(ctx, x, y, w, h, 999); ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.stroke();
+        }
+        ctx.shadowBlur = 0;
+        ctx.textAlign = 'center'; ctx.fillStyle = '#fff'; ctx.font = '700 19px sans-serif'; ctx.textBaseline = 'middle';
+        ctx.fillText(meta.icon, x + w / 2, y + h / 2 - 6);
+        ctx.font = '11px sans-serif';
+        const sub = obj.type === 'plus' ? `+${Math.min(3, 1 + Math.floor(Math.max(0, obj.plusHits - 1) / 4))}` : meta.label;
+        ctx.fillText(sub, x + w / 2, y + h / 2 + 11);
+        ctx.restore();
+      }
+
+      for (const brick of run.bricks) {
+        const meta = brickMeta[brick.type];
+        const x = brick.col * CELL + 4, y = brick.row * CELL + 4, w = CELL - 8, h = CELL - 8;
+        const poly = getBrickPolygon(brick, 4);
+        const anchor = poly
+          ? {
+              x: (poly[0].x + poly[1].x + poly[2].x) / 3,
+              y: (poly[0].y + poly[1].y + poly[2].y) / 3,
+            }
+          : { x: x + w / 2, y: y + h / 2 };
+
+        ctx.save();
+        ctx.globalAlpha = brick.type === 'stealth' && brick.invisible ? 0.38 : 1;
+        ctx.beginPath();
+        if (poly) {
+          ctx.moveTo(poly[0].x, poly[0].y);
+          ctx.lineTo(poly[1].x, poly[1].y);
+          ctx.lineTo(poly[2].x, poly[2].y);
+          ctx.closePath();
+        } else {
+          drawRoundedRect(ctx, x, y, w, h, 14);
+        }
+        ctx.fillStyle = gradientFill(x, y, w, h, meta.colors[0], meta.colors[1]); ctx.fill();
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = brick.type === 'shield' ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.18)';
+        ctx.stroke();
+        if ((brick.type === 'symMain' && run.bricks.some(b => b.type === 'symSub' && !b.dead)) || brick.flash > 0) {
+          ctx.shadowBlur = 18; ctx.shadowColor = brick.type === 'symMain' ? 'rgba(250,204,21,0.34)' : 'rgba(255,255,255,0.25)';
+          ctx.stroke(); ctx.shadowBlur = 0;
+        }
+        if (poly) {
+          ctx.fillStyle = 'rgba(255,255,255,0.82)';
+          ctx.font = '700 10px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('△', anchor.x, anchor.y - 10);
+          ctx.fillStyle = '#fff';
+          ctx.font = '700 15px sans-serif';
+          ctx.fillText(String(Math.max(0, brick.hp)), anchor.x, anchor.y + 4);
+        } else {
+          ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+          ctx.fillStyle = 'rgba(255,255,255,0.84)'; ctx.font = '10px sans-serif';
+          ctx.fillText(meta.label, x + w / 2, y + 12);
+          ctx.fillStyle = '#fff'; ctx.font = '700 15px sans-serif';
+          ctx.fillText(String(Math.max(0, brick.hp)), x + w / 2, y + h / 2 + 1);
+        }
+        if (brick.type === 'shield' && brick.shield && !poly) {
+          drawRoundedRect(ctx, x + 10, y + h - 16, w - 20, 12, 999); ctx.fillStyle = 'rgba(255,255,255,0.82)'; ctx.fill();
+          ctx.fillStyle = '#0f172a'; ctx.font = '700 9px sans-serif'; ctx.fillText('护盾', x + w / 2, y + h - 10);
+        } else if (brick.type === 'stealth' && brick.invisible && !poly) {
+          ctx.fillStyle = '#cffafe'; ctx.font = '10px sans-serif'; ctx.fillText('隐身', x + w / 2, y + h - 10);
+        }
+        ctx.restore();
+      }
+
+      if (run.effects.length) {
+        for (const fx of run.effects) {
+          const alpha = Math.max(0, fx.ttl / LIGHTNING_EFFECT_TTL);
+          ctx.save();
+          ctx.globalAlpha = 0.35 + alpha * 0.65;
+          ctx.lineCap = 'round';
+          ctx.lineWidth = fx.axis === 'row' ? 6 : 5;
+          ctx.strokeStyle = fx.axis === 'row' ? 'rgba(253,224,71,0.98)' : 'rgba(251,191,36,0.98)';
+          ctx.shadowBlur = 24;
+          ctx.shadowColor = fx.axis === 'row' ? 'rgba(253,224,71,0.75)' : 'rgba(251,191,36,0.72)';
+          ctx.beginPath();
+          ctx.moveTo(fx.x1, fx.y1);
+          if (fx.axis === 'row') {
+            for (let step = 1; step <= 6; step += 1) {
+              const x = (BOARD_W / 6) * step;
+              const y = fx.y1 + (step % 2 === 0 ? -1 : 1) * (6 + alpha * 8);
+              ctx.lineTo(x, y);
+            }
+          } else {
+            for (let step = 1; step <= 10; step += 1) {
+              const y = (BOARD_H / 10) * step;
+              const x = fx.x1 + (step % 2 === 0 ? -1 : 1) * (6 + alpha * 8);
+              ctx.lineTo(x, y);
+            }
+          }
+          ctx.lineTo(fx.x2, fx.y2);
+          ctx.stroke();
+          ctx.restore();
+        }
+      }
+
+      if (run.baffle.unlocked) {
+        const width = run.baffle.widthCells * CELL;
+        const x = (run.baffle.x ?? run.launcherX) - width / 2;
+        const y = BOARD_H - 10;
+        ctx.save();
+        drawRoundedRect(ctx, x, y, width, 10, 999);
+        ctx.fillStyle = gradientFill(x, y, width, 10, '#7dd3fc', '#38bdf8');
+        ctx.shadowBlur = 28; ctx.shadowColor = 'rgba(56,189,248,0.45)';
+        ctx.fill();
+        ctx.restore();
+      }
+
+      for (const ball of run.activeBalls) {
+        ctx.save();
+        let alpha = 1;
+        if (ball.ttl !== null && ball.ttl < 1.5) alpha = 0.45 + (Math.sin(ball.ttl * 22) + 1) * 0.25;
+        ctx.globalAlpha = alpha;
+        ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+        ctx.fillStyle = ballFill(ball.damage); ctx.shadowBlur = 18; ctx.shadowColor = 'rgba(255,255,255,0.6)'; ctx.fill();
+        ctx.restore();
+      }
+
+      const launcherX = run.launcherX, launcherY = BOARD_H + 8;
+      ctx.save();
+      ctx.beginPath(); ctx.arc(launcherX, launcherY + 20, 20, 0, Math.PI * 2);
+      ctx.fillStyle = gradientFill(launcherX - 20, launcherY, 40, 40, '#475569', '#0f172a'); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.18)'; ctx.stroke();
+      ctx.beginPath(); ctx.arc(launcherX, launcherY + 20, 7, 0, Math.PI * 2); ctx.fillStyle = ballFill(run.ballDamage); ctx.fill();
+      ctx.fillStyle = '#cbd5e1'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center'; ctx.fillText('发射口', launcherX, BOARD_H + 56);
+      ctx.restore();
+
+      if (run.hoverCell && run.mode) {
+        ctx.save();
+        const x = run.hoverCell.col * CELL + 2, y = run.hoverCell.row * CELL + 2, w = CELL - 4, h = CELL - 4;
+        drawRoundedRect(ctx, x, y, w, h, 14);
+        ctx.fillStyle = run.mode === 'placeSplit3' ? 'rgba(217,70,239,0.1)' : 'rgba(251,191,36,0.1)'; ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = run.mode === 'placeSplit3' ? 'rgba(249,168,212,0.95)' : 'rgba(253,224,71,0.95)'; ctx.stroke();
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+
+    function renderMetaList() {
+      els.metaList.innerHTML = '';
+      Object.values(objectMeta).forEach(meta => {
+        const div = document.createElement('div');
+        div.className = 'mini-card';
+        div.innerHTML = `<div class="mini-title">${meta.label}</div><div class="mini-hint">${meta.hint}</div>`;
+        els.metaList.appendChild(div);
+      });
+    }
+
+    function renderLogs() {
+      els.logList.innerHTML = '';
+      run.logs.forEach(log => {
+        const div = document.createElement('div');
+        div.className = 'log-item'; div.textContent = log; els.logList.appendChild(div);
+      });
+    }
+
+    function render() {
+      els.profileCumulative.textContent = profile.cumulativeScore;
+      els.profileBest.textContent = profile.bestRunScore;
+      els.profileRuns.textContent = profile.totalRuns;
+      els.playerChip.innerHTML = `当前玩家：<strong>${escapeHtml(net.playerName || '未设置')}</strong>`;
+      els.syncChip.innerHTML = `联网状态：<strong>${escapeHtml(net.ready ? '已连接' : (net.configured ? '初始化失败' : '未配置'))}</strong>`;
+      updateEntryButtons();
+      renderLeaderboards();
+      if (screen === 'game') {
+        let hint = run.mode === 'placeSplit3' ? '点击空格放置 1变3 元素' : run.mode === 'blastSelect' ? `点击砖块造成 ${run.ballDamage * 4} 点伤害` : run.pendingText;
+        // 格挡现在仅对触发的那块砖本回合生效。
+        if (run.roundInProgress && run.speedMultiplier > 1.001) {
+          const speedReason = run.shotElapsed > TIME_ACCEL_START_SECONDS
+            ? `本轮已持续 ${Math.floor(run.shotElapsed)} 秒，自动加速到 ${round2(run.speedMultiplier)} 倍`
+            : `剩余球数低于首发30%，已自动 ${round2(run.speedMultiplier)} 倍速`;
+          hint = `${hint} · ${speedReason}`;
+        }
+        els.statScore.textContent = run.currentRunScore;
+        els.statEnergy.textContent = `${run.energy}/${run.maxEnergy}`;
+        els.statBall.textContent = `${run.ballCount} × ${run.ballDamage}`;
+        els.statLevel.textContent = `Lv.${run.stageLevel}`;
+        els.statPower.textContent = totalBallPower(run);
+        els.boardHint.textContent = hint;
+        els.progressText.textContent = `升级进度 ${run.stageProgress}/${run.stageNeed}`;
+        const tierText = tier => tier === 'hard' ? '困难' : '简单';
+        const currentTemplate = run.templateLineup[0] ? `${tierText(run.templateLineup[0].tier)}·${run.templateLineup[0].name} · 剩余${run.templateLineup[0].rowsLeft}行` : '等待生成';
+        const hardChance = getHardChanceByEnergySpent(run.energySpent || 0);
+        const nextTemplate = run.templateLineup[1]
+          ? `${tierText(run.templateLineup[1].tier)}·${run.templateLineup[1].name}`
+          : hardChance <= 0.0001
+            ? `新手保护中（累计消耗 ${run.energySpent || 0}/${HARD_UNLOCK_ENERGY_SPENT} 体力）`
+            : `下一抽困难概率 ${Math.round(hardChance * 100)}%`;
+        const dynamicTriggerLayers = getDynamicReplenishTriggerLayers(run);
+        const dynamicFillTarget = getDynamicFillTargetLayers(run);
+        els.templateInfo.textContent = `底部保留 6 行安全区；累计消耗体力低于 ${HARD_UNLOCK_ENERGY_SPENT} 时只出简单模板；之后困难概率随消耗提升，最高80%；每次结算先判断当前砖块最深层数是否 ≤ 当前触发线 X：X 会从 ${MIN_REPLENISH_TRIGGER_LAYERS} 缓慢过渡到 ${MAX_REPLENISH_TRIGGER_LAYERS}；若触发则一次性判定补到目标层数 Y，Y 会从 ${BASE_REPLENISH_TARGET_LAYERS} 缓慢过渡到 ${MAX_REPLENISH_TARGET_LAYERS}，并逐层播放推进动画；若未触发，则只固定补 1 层。当前：触发线 ${dynamicTriggerLayers} 层，目标层数 ${dynamicFillTarget} 层。当前模板：${currentTemplate}；下一个：${nextTemplate}`;
+        els.energyInfo.textContent = `默认体力 ${run.maxEnergy}，演示按钮允许超上限补体；当前 ${run.energy}/${run.maxEnergy}；基础节奏已提升到 2 倍${run.speedMultiplier > 1.001 ? `；本轮自动加速中（当前${round2(run.speedMultiplier)}倍，20秒后会逐步拉到最高15倍）` : ''}`;
+        renderGoalPanel(run);
+        els.progressBar.style.width = `${(run.stageProgress / run.stageNeed) * 100}%`;
+        els.itemSplit3Title.textContent = `1变3 道具 × ${run.items.split3}`;
+        els.itemBlastTitle.textContent = `伤害道具 × ${run.items.blast}`;
+        els.itemBlastHint.textContent = `点击后再点砖块，造成 ${run.ballDamage * 4} 点伤害`;
+        els.itemClearTitle.textContent = `清屏道具 × ${run.items.clear}`;
+        els.itemSplit3.classList.toggle('active', run.mode === 'placeSplit3');
+        els.itemBlast.classList.toggle('active', run.mode === 'blastSelect');
+        if (!run.baffle.unlocked) {
+          const cost = getBaffleBallCost(1);
+          els.baffleInfo.textContent = `总球伤达到 15 可激活（当前 ${totalBallPower(run)}） · 激活消耗 ${cost} 球 · 初始长度更短`;
+          els.baffleBtn.textContent = `激活（${cost}球）`;
+          els.baffleBtn.disabled = false;
+          els.baffleBtn.style.opacity = totalBallPower(run) >= 15 && run.ballCount >= cost ? '1' : '.75';
+        } else {
+          const nextCost = run.baffle.level >= 3 ? null : getBaffleBallCost(run.baffle.level + 1);
+          els.baffleInfo.textContent = `Lv.${run.baffle.level} · 长度 ${round2(run.baffle.widthCells)}格 · 首次反弹后 ${round2(run.baffle.ttl)} 秒消失 · 位置随机${nextCost ? ` · 下次升级消耗 ${nextCost} 球` : ' · 已满级'}`;
+          els.baffleBtn.textContent = run.baffle.level >= 3 ? '满级' : `升级（${nextCost}球）`;
+          els.baffleBtn.disabled = run.baffle.level >= 3;
+          els.baffleBtn.style.opacity = run.baffle.level >= 3 ? '.6' : (run.ballCount >= nextCost ? '1' : '.75');
+        }
+        renderLogs();
+        renderBoard();
+        commitGameOverIfNeeded();
+      }
+      saveCurrentSession();
+    }
+
+    function frame(ts) {
+      if (!lastTs) lastTs = ts;
+      const dt = Math.min(0.032, (ts - lastTs) / 1000);
+      lastTs = ts;
+      if (screen === 'game') {
+        run = simulateFrame(run, dt);
+        render();
+      }
+      if (screen === 'game' && net.liveDirty) syncLiveRunSnapshot(false);
+      if (els.leaderboardModal.style.display === 'flex' && net.ready && Date.now() - net.lastLeaderboardLoadAt > LEADERBOARD_AUTO_REFRESH_MS) {
+        loadLeaderboards();
+      }
+      raf = requestAnimationFrame(frame);
+    }
+
+    els.startBtn.addEventListener('click', () => handleStartEntry());
+    els.resetProfileBtn.addEventListener('click', resetProfile);
+    els.changePlayerBtn.addEventListener('click', () => openPlayerModal(net.playerName));
+    els.refreshBoardsBtn.addEventListener('click', () => loadLeaderboards());
+    els.homeBoardsBtn.addEventListener('click', () => openLeaderboardModal('single'));
+    els.openBoardsBtn.addEventListener('click', () => openLeaderboardModal('single'));
+    els.gameBoardsBtn.addEventListener('click', () => openLeaderboardModal(leaderboardView.activeTab));
+    els.leaderboardTabs.forEach(btn => btn.addEventListener('click', () => setLeaderboardTab(btn.dataset.boardTab)));
+    els.leaderboardPrevPageBtn.addEventListener('click', () => changeLeaderboardPage(-1));
+    els.leaderboardNextPageBtn.addEventListener('click', () => changeLeaderboardPage(1));
+    els.leaderboardModalRefreshBtn.addEventListener('click', () => loadLeaderboards());
+    els.leaderboardModalCloseTopBtn.addEventListener('click', closeLeaderboardModal);
+    els.leaderboardModalCloseBtn.addEventListener('click', closeLeaderboardModal);
+    els.leaderboardModalCloseXBtn.addEventListener('click', closeLeaderboardModal);
+    els.leaderboardModal.addEventListener('click', (e) => { if (e.target === els.leaderboardModal) closeLeaderboardModal(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && els.leaderboardModal.style.display === 'flex') closeLeaderboardModal(); });
+    els.playerStartBtn.addEventListener('click', confirmPlayerAndStart);
+    els.playerCancelBtn.addEventListener('click', closePlayerModal);
+    els.playerModal.addEventListener('click', (e) => { if (e.target === els.playerModal) closePlayerModal(); });
+    els.playerNameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') confirmPlayerAndStart(); });
+    els.restartBtn.addEventListener('click', beginRun);
+    els.backHomeBtn.addEventListener('click', backHome);
+    els.itemSplit3.addEventListener('click', useSplit3Item);
+    els.itemBlast.addEventListener('click', useBlastItem);
+    els.itemClear.addEventListener('click', useClearItem);
+    els.baffleBtn.addEventListener('click', activateOrUpgradeBaffle);
+    els.energyAdd5Btn.addEventListener('click', () => addEnergy(5));
+    els.energyAdd10Btn.addEventListener('click', () => addEnergy(10));
+    els.energyFillBtn.addEventListener('click', () => addEnergy(0, 'fill'));
+    els.energyModalAdd5Btn.addEventListener('click', () => addEnergy(5, 'add', true));
+    els.energyModalAdd10Btn.addEventListener('click', () => addEnergy(10, 'add', true));
+    els.energyModalFillBtn.addEventListener('click', () => addEnergy(0, 'fill', true));
+    els.energyModalCloseBtn.addEventListener('click', hideEnergyModal);
+    els.energyModal.addEventListener('click', (e) => { if (e.target === els.energyModal) hideEnergyModal(); });
+    els.playAgainBtn.addEventListener('click', beginRun);
+    els.modalHomeBtn.addEventListener('click', backHome);
+    els.board.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    els.board.addEventListener('touchstart', handlePointerDown, { passive: false });
+    window.addEventListener('touchmove', handlePointerMove, { passive: false });
+    window.addEventListener('touchend', handlePointerUp, { passive: true });
+
+    initSupabase();
+    renderMetaList();
+    loadLeaderboards();
+    const bootPlayer = loadStoredPlayerProfile();
+    if (bootPlayer.playerName) {
+      net.playerName = bootPlayer.playerName;
+      net.playerId = bootPlayer.playerId || null;
+    }
+    updateEntryButtons();
+    if (net.playerName && restoreSavedSession()) {
+      markLiveRunDirty(true);
+      if (net.ready) {
+        syncLiveRunSnapshot(true);
+        loadLeaderboards();
+      }
+    }
+    window.addEventListener('beforeunload', () => saveCurrentSession(true));
+    document.addEventListener('visibilitychange', () => { if (document.hidden) saveCurrentSession(true); });
+    render();
+    raf = requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
